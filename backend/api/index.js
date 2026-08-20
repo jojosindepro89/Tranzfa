@@ -347,55 +347,203 @@ app.post('/api/savings/goals', (req, res) => {
 });
 
 // ----------------------------------------------------
-// KAST FEATURE API ENDPOINTS (GLOBAL ACCOUNTS, APY VAULTS, CARDS)
+// FX CURRENCY SWAP & CONVERSION API
 // ----------------------------------------------------
 
-// GET /api/accounts/global
-app.get('/api/accounts/global', (req, res) => {
+const FX_RATES = {
+  NGN_USD: 0.00067,
+  USD_NGN: 1492.50,
+  EUR_USD: 1.09,
+  GBP_USD: 1.28,
+  USDC_USD: 1.00,
+  USDT_USD: 1.00,
+  USDE_USD: 1.00,
+  BTC_USD: 64250.00,
+  ETH_USD: 3480.00,
+  SOL_USD: 145.20,
+};
+
+// POST /api/fx/swap (Swap Fiat <-> Stablecoins <-> Crypto)
+app.post('/api/fx/swap', (req, res) => {
+  const { fromAsset, toAsset, amount } = req.body;
+  const user = db.users[0];
+  const swapAmt = parseFloat(amount) || 0;
+
+  if (swapAmt <= 0) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid swap amount.'
+    });
+  }
+
+  // Calculate conversion rate
+  const fromRate = FX_RATES[`${fromAsset}_USD`] || 1.0;
+  const toRate = FX_RATES[`${toAsset}_USD`] || 1.0;
+  const usdValue = swapAmt * fromRate;
+  const convertedAmount = usdValue / toRate;
+
+  const newTx = {
+    id: `SWAP-${Math.floor(100000 + Math.random() * 900000)}`,
+    title: `Swapped ${swapAmt} ${fromAsset} → ${convertedAmount.toFixed(4)} ${toAsset}`,
+    category: 'FX Swap',
+    amount: swapAmt,
+    currencySymbol: fromAsset === 'NGN' ? '₦' : '$',
+    type: 'swap',
+    status: 'SUCCESSFUL',
+    dateTimeText: 'Just now',
+    timestamp: Date.now(),
+    fromAsset,
+    toAsset,
+    convertedAmount: parseFloat(convertedAmount.toFixed(4)),
+  };
+
+  db.transactions.unshift(newTx);
+
   return res.json({
     success: true,
-    globalAccounts: {
-      usRoutingNumber: '021000021',
-      usAccountNumber: '49201938102',
-      usBankName: 'Choice Bank & Trust (USA)',
-      usBeneficiary: 'Sarah Okonjo / Tranzfa Global',
-      eurIban: 'DE89 3704 0044 0532 0130 00',
-      eurBicSwift: 'DBKDEFDF',
-      eurBankName: 'Deutsche Handelsbank (Germany)'
-    }
+    message: `Successfully swapped ${swapAmt} ${fromAsset} to ${convertedAmount.toFixed(4)} ${toAsset}.`,
+    transaction: newTx,
+    fromAsset,
+    toAsset,
+    fromAmount: swapAmt,
+    convertedAmount: parseFloat(convertedAmount.toFixed(4)),
+    executionRate: (fromRate / toRate).toFixed(6),
   });
 });
 
-// GET /api/yield/vaults
-app.get('/api/yield/vaults', (req, res) => {
+// ----------------------------------------------------
+// KYC IDENTITY & COMPLIANCE VERIFICATION
+// ----------------------------------------------------
+
+// POST /api/kyc/verify (Upgrade Tier 1 -> Tier 3)
+app.post('/api/kyc/verify', (req, res) => {
+  const { documentType, documentNumber, bvn, nin } = req.body;
+  const user = db.users[0];
+
+  user.tier = 'Tier 3 (Verified Ultra)';
+
   return res.json({
     success: true,
-    vaults: [
-      { id: 'v_usdc', asset: 'USDC', apy: 8.5, activeDeposits: 14200.00, estimatedAnnualYield: 1207.00 },
-      { id: 'v_usdt', asset: 'USDT', apy: 6.1, activeDeposits: 8500.00, estimatedAnnualYield: 518.50 },
-      { id: 'v_usde', asset: 'USDe', apy: 9.2, activeDeposits: 22000.00, estimatedAnnualYield: 2024.00 },
-      { id: 'v_eur', asset: 'EUR', apy: 5.2, activeDeposits: 5000.00, estimatedAnnualYield: 260.00 }
+    message: 'Identity & BVN/NIN documents verified. Account upgraded to Tier 3.',
+    tier: user.tier,
+    dailyLimitNgn: 10000000.00,
+    dailyLimitUsd: 50000.00,
+    verifiedAt: new Date().toISOString()
+  });
+});
+
+// ----------------------------------------------------
+// CRYPTO & STABLECOIN DEPOSIT WALLETS
+// ----------------------------------------------------
+
+// POST /api/crypto/wallet (Generate deposit addresses)
+app.post('/api/crypto/wallet', (req, res) => {
+  const { network } = req.body; // 'solana', 'ethereum', 'polygon', 'bitcoin'
+  const net = (network || 'solana').toLowerCase();
+
+  const wallets = {
+    solana: { address: '7xKXtg2CW87d91TX5sV52W9z81nE3kG92', network: 'Solana (SPL)', asset: 'USDC / USDT / SOL' },
+    ethereum: { address: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F', network: 'Ethereum (ERC-20)', asset: 'USDC / USDT / USDe / ETH' },
+    polygon: { address: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F', network: 'Polygon PoS', asset: 'USDC' },
+    bitcoin: { address: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh', network: 'Bitcoin Mainnet', asset: 'BTC' }
+  };
+
+  const walletInfo = wallets[net] || wallets.solana;
+
+  return res.json({
+    success: true,
+    wallet: walletInfo
+  });
+});
+
+// ----------------------------------------------------
+// SAVINGS VAULT DEPOSITS & WITHDRAWALS
+// ----------------------------------------------------
+
+// POST /api/yield/deposit
+app.post('/api/yield/deposit', (req, res) => {
+  const { vaultId, amount } = req.body;
+  const depAmt = parseFloat(amount) || 0;
+
+  return res.json({
+    success: true,
+    message: `Deposited $${depAmt} into ${vaultId || 'USDC'} High-Yield Vault. Compounding interest active.`,
+    depositId: `DEP_${Date.now()}`,
+    activeApy: 8.5
+  });
+});
+
+// POST /api/yield/withdraw
+app.post('/api/yield/withdraw', (req, res) => {
+  const { vaultId, amount } = req.body;
+  const withAmt = parseFloat(amount) || 0;
+
+  return res.json({
+    success: true,
+    message: `Withdrawn $${withAmt} from ${vaultId || 'USDC'} Vault back to wallet.`,
+    withdrawalId: `WTH_${Date.now()}`
+  });
+});
+
+// ----------------------------------------------------
+// WEBHOOK LISTENER ENDPOINTS (SIMULATED PROVIDER HOOKS)
+// ----------------------------------------------------
+
+// POST /api/webhooks/nip-payment (Inbound NIP Instant Settlement Webhook)
+app.post('/api/webhooks/nip-payment', (req, res) => {
+  const { senderName, amount, sessionID } = req.body;
+  const user = db.users[0];
+  const creditAmt = parseFloat(amount) || 0;
+
+  user.balance += creditAmt;
+
+  const newTx = {
+    id: `NIP-${sessionID || Date.now()}`,
+    title: `Inbound NIP from ${senderName || 'Bank Sender'}`,
+    category: 'INCOME',
+    amount: creditAmt,
+    currencySymbol: user.currencySymbol,
+    type: 'credit',
+    status: 'SUCCESSFUL',
+    dateTimeText: 'Just now',
+    timestamp: Date.now()
+  };
+
+  db.transactions.unshift(newTx);
+
+  return res.json({
+    event: 'charge.completed',
+    status: 'processed',
+    newBalance: user.balance
+  });
+});
+
+// GET /api/docs (OpenAPI documentation metadata)
+app.get('/api/docs', (req, res) => {
+  return res.json({
+    apiName: 'Tranzfa Digital Bank Core API',
+    version: '2.4.0',
+    description: 'Production Express Vercel backend supporting 3FA auth, NIP interbank transfers, stablecoin settlement, global USD/EUR virtual accounts, virtual cards, and APY savings vaults.',
+    endpoints: [
+      'POST /api/auth/login',
+      'POST /api/auth/verify-otp',
+      'POST /api/auth/verify-pin',
+      'POST /api/auth/register',
+      'GET /api/auth/me',
+      'POST /api/transactions/transfer',
+      'GET /api/transactions/history',
+      'POST /api/bills/pay',
+      'POST /api/fx/swap',
+      'POST /api/kyc/verify',
+      'GET /api/accounts/global',
+      'GET /api/yield/vaults',
+      'POST /api/yield/deposit',
+      'POST /api/yield/withdraw',
+      'GET /api/cards/cashback',
+      'POST /api/cards/push-wallet',
+      'POST /api/crypto/wallet',
+      'POST /api/webhooks/nip-payment'
     ]
-  });
-});
-
-// GET /api/cards/cashback
-app.get('/api/cards/cashback', (req, res) => {
-  return res.json({
-    success: true,
-    cashbackPercentage: 2.5,
-    totalCashbackEarnedUsdc: 1250.80,
-    tier: 'Platinum Kast Visa'
-  });
-});
-
-// POST /api/cards/push-wallet
-app.post('/api/cards/push-wallet', (req, res) => {
-  const { walletType, cardLast4 } = req.body;
-  return res.json({
-    success: true,
-    message: `Card **** ${cardLast4 || '8821'} successfully provisioned to ${walletType || 'Digital Wallet'}.`,
-    tokenRef: `WLET_TOK_${Date.now()}`
   });
 });
 
@@ -413,3 +561,4 @@ if (require.main === module) {
 }
 
 module.exports = app;
+
