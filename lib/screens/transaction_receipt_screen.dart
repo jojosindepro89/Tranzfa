@@ -46,6 +46,16 @@ class TransactionReceiptScreen extends StatelessWidget {
     final textColor = isDark ? Colors.white : const Color(0xFF0B1F17);
     final subtextColor = isDark ? const Color(0xFF8E9E98) : const Color(0xFF5A7067);
 
+    final isPending = statusText == 'HELD_FOR_REVIEW' ||
+        statusText == 'PENDING_VERIFICATION' ||
+        statusText.contains('HOLD') ||
+        statusText.contains('PENDING') ||
+        statusText.contains('REVIEW');
+
+    final heroBgColor = isPending ? const Color(0xFFD97706).withOpacity(0.2) : const Color(0xFF00C88C).withOpacity(0.2);
+    final heroCircleColor = isPending ? const Color(0xFFD97706) : const Color(0xFF005238);
+    final heroIcon = isPending ? Icons.shield_outlined : Icons.check_rounded;
+
     return Scaffold(
       backgroundColor: bgColor,
       appBar: AppBar(
@@ -63,7 +73,7 @@ class TransactionReceiptScreen extends StatelessWidget {
           ),
         ),
         title: Text(
-          'Receipt',
+          isPending ? 'Transfer Under Review' : 'Receipt',
           style: TextStyle(
             color: textColor,
             fontSize: 20,
@@ -74,9 +84,9 @@ class TransactionReceiptScreen extends StatelessWidget {
         actions: [
           Container(
             margin: const EdgeInsets.only(right: 16),
-            child: const Icon(
-              Icons.verified_rounded,
-              color: Color(0xFFE5B800),
+            child: Icon(
+              isPending ? Icons.warning_amber_rounded : Icons.verified_rounded,
+              color: isPending ? const Color(0xFFF59E0B) : const Color(0xFFE5B800),
               size: 26,
             ),
           ),
@@ -88,24 +98,24 @@ class TransactionReceiptScreen extends StatelessWidget {
           children: [
             const SizedBox(height: 12),
 
-            // Big Hero Check Circle Icon
+            // Big Hero Check / Warning Circle Icon
             Container(
               width: 86,
               height: 86,
               decoration: BoxDecoration(
-                color: const Color(0xFF00C88C).withOpacity(0.2),
+                color: heroBgColor,
                 shape: BoxShape.circle,
               ),
               child: Center(
                 child: Container(
                   width: 64,
                   height: 64,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF005238),
+                  decoration: BoxDecoration(
+                    color: heroCircleColor,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
-                    Icons.check_rounded,
+                  child: Icon(
+                    heroIcon,
                     color: Colors.white,
                     size: 38,
                   ),
@@ -114,17 +124,20 @@ class TransactionReceiptScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // SUCCESSFUL Status Badge
+            // Status Badge
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF132F24) : const Color(0xFFE0F2EB),
+                color: isPending
+                    ? const Color(0xFF3B2503)
+                    : (isDark ? const Color(0xFF132F24) : const Color(0xFFE0F2EB)),
                 borderRadius: BorderRadius.circular(20),
+                border: isPending ? Border.all(color: const Color(0xFFF59E0B), width: 1) : null,
               ),
               child: Text(
-                statusText,
-                style: const TextStyle(
-                  color: Color(0xFFE5B800),
+                isPending ? 'PENDING COMPLIANCE VERIFICATION' : statusText,
+                style: TextStyle(
+                  color: isPending ? const Color(0xFFF59E0B) : const Color(0xFFE5B800),
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1.2,
@@ -150,7 +163,7 @@ class TransactionReceiptScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  'Sent to ',
+                  isPending ? 'Pending Transfer to ' : 'Sent to ',
                   style: TextStyle(color: subtextColor, fontSize: 14),
                 ),
                 Text(
@@ -163,6 +176,43 @@ class TransactionReceiptScreen extends StatelessWidget {
                 ),
               ],
             ),
+            const SizedBox(height: 16),
+
+            // High-Risk / Pending Verification Alert Banner
+            if (isPending) ...[
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF231600),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFF59E0B).withOpacity(0.6), width: 1.2),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.info_outline_rounded, color: Color(0xFFF59E0B), size: 22),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text(
+                            'Transaction Held for Anti-Fraud Review',
+                            style: TextStyle(color: Color(0xFFF59E0B), fontSize: 13, fontWeight: FontWeight.bold),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'This transaction has NOT gone through yet. It has been placed on hold under the 30-minute CBN Anti-Fraud & APP Dispute Protection window. Compliance verification is required.',
+                            style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.4),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             const SizedBox(height: 28),
 
             // Main Receipt Details Card Container

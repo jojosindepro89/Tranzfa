@@ -17,7 +17,7 @@ class _SignupFlowScreenState extends State<SignupFlowScreen> {
   // STEP 1 State: Mobile Number
   String _phoneNumber = "";
   String _countryCode = "+1";
-  String _countryFlag = "🇺🇸";
+  String _countryFlag = "";
 
   // STEP 2 State: Personal Details
   final TextEditingController _fullNameController = TextEditingController(text: "Johnathan Doe");

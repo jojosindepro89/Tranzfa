@@ -518,6 +518,114 @@ app.post('/api/webhooks/nip-payment', (req, res) => {
   });
 });
 
+// ----------------------------------------------------
+// AI ASSISTANT & FINANCIAL ADVISOR API
+// ----------------------------------------------------
+
+// POST /api/ai/chat (Interactive AI Financial Copilot)
+app.post('/api/ai/chat', (req, res) => {
+  const { message } = req.body;
+  const prompt = (message || '').toLowerCase();
+  const user = db.users[0];
+
+  let replyText = "I've analyzed your financial query. Your account is in strong health with a balance of " + user.currencySymbol + user.balance.toLocaleString() + ".";
+  let responseCard = null;
+
+  if (prompt.includes('subscription') || prompt.includes('cancel') || prompt.includes('save')) {
+    replyText = "I've identified $42.50 in recurring subscriptions you haven't used in 60 days. Would you like me to move these savings into your High-Yield Vault?";
+    responseCard = {
+      isCard: true,
+      cardType: 'savings',
+      text: replyText,
+      goalTitle: 'Monthly Goal: Emergency Fund Vault',
+      goalPercent: '85%',
+      question: 'Would you like me to cancel these and auto-deposit $42.50 to your Emergency Vault?'
+    };
+  } else if (prompt.includes('report') || prompt.includes('spending') || prompt.includes('monthly') || prompt.includes('category')) {
+    replyText = "Here is your spending analysis for Dining & Drinks. You spent $240.00 this week, which is 15% above your weekly benchmark.";
+    responseCard = {
+      isCard: true,
+      cardType: 'insight',
+      title: 'Dining & Drinks',
+      tag: 'Spending Insight',
+      badge: '+15% vs last week',
+      spentText: "You spent $240.00 at restaurants this week. That's $35 over your typical average."
+    };
+  } else if (prompt.includes('budget') || prompt.includes('goal')) {
+    replyText = "Your top goal 'New Car (Porsche 911 GT3)' is at 65% ($15,000 / $23,000). At your current savings rate, you will reach it in 42 days!";
+  } else if (prompt.includes('transfer') || prompt.includes('send') || prompt.includes('pay')) {
+    replyText = "You can initiate 3FA speed transfers instantly using the Send Money widget or API endpoint POST /api/transactions/transfer with 4-digit PIN verification.";
+  }
+
+  return res.json({
+    success: true,
+    message: 'AI query processed successfully.',
+    reply: replyText,
+    card: responseCard,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// GET /api/ai/insights (Automated Financial Insights & Subscription Audit)
+app.get('/api/ai/insights', (req, res) => {
+  const user = db.users[0];
+
+  return res.json({
+    success: true,
+    budgetHealthScore: 92,
+    healthStatus: 'Excellent',
+    insights: [
+      {
+        id: 'ins_1',
+        type: 'SPENDING_SPIKE',
+        category: 'Dining & Drinks',
+        amountSpent: 240.00,
+        averageAmount: 205.00,
+        variancePercent: 17.0,
+        recommendation: 'Cap dining out to $40/week to save $140 monthly.'
+      },
+      {
+        id: 'ins_2',
+        type: 'VAULT_OPPORTUNITY',
+        title: 'Idle Cash Compound Yield',
+        idleBalance: user.balance * 0.4,
+        projectedAnnualYield: (user.balance * 0.4 * 0.085).toFixed(2),
+        recommendation: 'Transfer idle balance to 8.5% APY USDC Vault to earn passive income.'
+      }
+    ],
+    unusedSubscriptions: [
+      { id: 'sub_1', name: 'StreamBox Pro', cost: 19.99, lastUsedDaysAgo: 74 },
+      { id: 'sub_2', name: 'Fitness App', cost: 22.50, lastUsedDaysAgo: 61 }
+    ],
+    savingsOpportunityTotal: 42.49,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// POST /api/ai/analyze-transaction (Transaction Classifier & Risk Scoring)
+app.post('/api/ai/analyze-transaction', (req, res) => {
+  const { title, amount, category } = req.body;
+  const txAmount = parseFloat(amount) || 0;
+
+  const isAnomaly = txAmount > 1000;
+  const riskScore = isAnomaly ? 0.45 : 0.02;
+
+  return res.json({
+    success: true,
+    transaction: {
+      title: title || 'Merchant Purchase',
+      amount: txAmount,
+      smartCategory: category || 'General Purchase',
+      riskScore: riskScore,
+      riskLevel: riskScore < 0.1 ? 'LOW' : 'MEDIUM',
+      spendingAnomaly: isAnomaly,
+      carbonFootprintKg: (txAmount * 0.08).toFixed(2),
+      cashbackEligible: true,
+      cashbackEstimated: (txAmount * 0.02).toFixed(2)
+    }
+  });
+});
+
 // GET /api/docs (OpenAPI documentation metadata)
 app.get('/api/docs', (req, res) => {
   return res.json({
@@ -542,7 +650,10 @@ app.get('/api/docs', (req, res) => {
       'GET /api/cards/cashback',
       'POST /api/cards/push-wallet',
       'POST /api/crypto/wallet',
-      'POST /api/webhooks/nip-payment'
+      'POST /api/webhooks/nip-payment',
+      'POST /api/ai/chat',
+      'GET /api/ai/insights',
+      'POST /api/ai/analyze-transaction'
     ]
   });
 });

@@ -319,10 +319,10 @@ class _VtuPurchaseModalState extends State<VtuPurchaseModal> {
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    _buildCategoryChip(VtuCategory.airtime, '📱 Airtime', isDark, textColor),
-                    _buildCategoryChip(VtuCategory.data, '🌐 Data', isDark, textColor),
-                    _buildCategoryChip(VtuCategory.electricity, '⚡ Electricity', isDark, textColor),
-                    _buildCategoryChip(VtuCategory.cableTv, '📺 Cable TV', isDark, textColor),
+                    _buildCategoryChip(VtuCategory.airtime, ' Airtime', isDark, textColor),
+                    _buildCategoryChip(VtuCategory.data, ' Data', isDark, textColor),
+                    _buildCategoryChip(VtuCategory.electricity, ' Electricity', isDark, textColor),
+                    _buildCategoryChip(VtuCategory.cableTv, ' Cable TV', isDark, textColor),
                   ],
                 ),
               ),

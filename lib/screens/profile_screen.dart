@@ -1,297 +1,202 @@
 import 'package:flutter/material.dart';
+import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
 import '../services/banking_service.dart';
 import 'dashboard_screen.dart';
 import 'login_screen.dart';
-import 'ai_assistant_screen.dart';
 import 'cards_screen.dart';
+import 'bills_screen.dart';
+import 'ai_assistant_screen.dart';
+import 'transaction_history_screen.dart';
+import 'kyc_overview_screen.dart';
+import 'personal_details_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
+
   const ProfileScreen({super.key});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
+
 class _ProfileScreenState extends State<ProfileScreen> {
   bool _biometricsEnabled = true;
+  bool _notificationsEnabled = true;
 
   @override
   Widget build(BuildContext context) {
     final bankService = Provider.of<BankingService>(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark ? const Color(0xFF040E0A) : const Color(0xFFF4F7F5);
-    final cardBgColor = isDark ? const Color(0xFF0B1F17) : Colors.white;
-    final borderColor = isDark ? const Color(0xFF143024) : const Color(0xFFE0E8E4);
+    final bg = isDark ? const Color(0xFF060E0A) : const Color(0xFFF6F8F7);
+    final cardBg = isDark ? const Color(0xFF0D1E17) : Colors.white;
+    final divColor = isDark ? const Color(0xFF1A2E24) : const Color(0xFFECF0EE);
     final textColor = isDark ? Colors.white : const Color(0xFF0B1F17);
-    final subtextColor = isDark ? const Color(0xFF8E9E98) : const Color(0xFF5A7067);
+    final sub = isDark ? const Color(0xFF7A9489) : const Color(0xFF6B7E76);
+    const green = Color(0xFF00C88C);
 
     return Scaffold(
-      backgroundColor: bgColor,
+      backgroundColor: bg,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: textColor),
-          onPressed: () {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const DashboardScreen()),
-            );
-          },
-        ),
-        title: Text(
-          'Settings',
-          style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 18),
-        ),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.more_vert, color: textColor),
-            onPressed: () {},
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: textColor, size: 18),
+          onPressed: () => Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const DashboardScreen()),
           ),
-        ],
+        ),
+        title: Text('Profile', style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 17)),
+        centerTitle: true,
       ),
       body: SafeArea(
         child: Stack(
           children: [
             SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 10, 20, 100),
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 110),
               child: Column(
                 children: [
-                  // USER AVATAR & NAME HEADER
-                  Center(
-                    child: Column(
-                      children: [
-                        Stack(
-                          children: [
-                            Container(
-                              width: 100,
-                              height: 100,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(color: const Color(0xFF00C88C), width: 2.5),
-                              ),
-                              child: CircleAvatar(
-                                radius: 46,
-                                backgroundColor: isDark ? const Color(0xFF1E3A2F) : const Color(0xFFC0EADA),
-                                child: Icon(Icons.person, size: 54, color: isDark ? Colors.white : const Color(0xFF0B1F17)),
-                              ),
-                            ),
-                            Positioned(
-                              bottom: 2,
-                              right: 2,
-                              child: Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF00C88C),
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: bgColor, width: 2),
-                                ),
-                                child: const Icon(Icons.edit, color: Colors.black, size: 14),
-                              ),
-                            ),
-                          ],
+                  // AVATAR
+                  const SizedBox(height: 16),
+                  Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: 44,
+                        backgroundColor: isDark ? const Color(0xFF1A3A2C) : const Color(0xFFCCE9DC),
+                        child: Text(
+                          bankService.userFullName.isNotEmpty ? bankService.userFullName[0] : 'S',
+                          style: const TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            color: green,
+                          ),
                         ),
-                        const SizedBox(height: 14),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              bankService.userFullName,
-                              style: TextStyle(
-                                color: textColor,
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF00C88C).withOpacity(0.15),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: const Color(0xFF00C88C).withOpacity(0.4)),
-                              ),
-                              child: Row(
-                                children: const [
-                                  Icon(Icons.check_circle, color: Color(0xFF00C88C), size: 12),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    'VERIFIED',
-                                    style: TextStyle(
-                                      color: Color(0xFF00C88C),
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(5),
+                          decoration: BoxDecoration(
+                            color: green,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: bg, width: 2),
+                          ),
+                          child: const Icon(Icons.edit, color: Colors.black, size: 12),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${bankService.userTag} • ID: 98234102',
-                          style: TextStyle(color: subtextColor, fontSize: 13),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-
-                  const SizedBox(height: 28),
-
-                  // SECTION 1: THEME & DISPLAY PREFERENCE (DARK / LIGHT / SYSTEM)
-                  _buildSectionHeader('THEME & DISPLAY', subtextColor),
                   const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(bankService.userFullName, style: TextStyle(color: textColor, fontSize: 20, fontWeight: FontWeight.bold)),
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                        decoration: BoxDecoration(color: green.withOpacity(0.12), borderRadius: BorderRadius.circular(10)),
+                        child: const Text('VERIFIED', style: TextStyle(color: green, fontSize: 10, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(bankService.userTag, style: TextStyle(color: sub, fontSize: 13)),
+
+                  const SizedBox(height: 32),
+
+                  // ACCOUNT SETTINGS
+                  _sectionHeader('ACCOUNT', sub),
+                  const SizedBox(height: 10),
+                  _cardContainer(cardBg, divColor, [
+                    _tile(
+                      Icons.person_outline_rounded,
+                      'Personal Details',
+                      bankService.userEmail,
+                      textColor,
+                      sub,
+                      green,
+                      () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const PersonalDetailsScreen()),
+                        );
+                      },
+                    ),
+                    _divider(divColor),
+
+                    _tile(Icons.account_balance_outlined, 'Bank Account Details', 'NUBAN: 0123456789', textColor, sub, green, () {}),
+                    _divider(divColor),
+                    _tile(
+                      Icons.verified_user_outlined,
+                      'KYC & Limits',
+                      bankService.activeKycTierInfo.badgeText,
+                      textColor,
+                      sub,
+                      green,
+                      () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const KycOverviewScreen()),
+                        );
+                      },
+                    ),
+                  ]),
+
+
+                  const SizedBox(height: 24),
+
+                  // APPEARANCE & THEME MODE
+                  _sectionHeader('APPEARANCE', sub),
+                  const SizedBox(height: 10),
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: cardBgColor,
+                      color: cardBg,
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: borderColor),
+                      border: Border.all(color: divColor),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          'App Appearance',
-                          style: TextStyle(color: textColor, fontSize: 15, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Select Dark, Light, or follow your OS System theme.',
-                          style: TextStyle(color: subtextColor, fontSize: 12),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Segmented Control Row
-                        Row(
-                          children: [
-                            _buildThemeOption(
-                              label: 'Dark',
-                              icon: Icons.dark_mode_outlined,
-                              pref: AppThemePreference.dark,
-                              currentPref: bankService.themePreference,
-                              onSelect: () => bankService.setThemePreference(AppThemePreference.dark),
-                              isDark: isDark,
-                            ),
-                            const SizedBox(width: 8),
-                            _buildThemeOption(
-                              label: 'Light',
-                              icon: Icons.light_mode_outlined,
-                              pref: AppThemePreference.light,
-                              currentPref: bankService.themePreference,
-                              onSelect: () => bankService.setThemePreference(AppThemePreference.light),
-                              isDark: isDark,
-                            ),
-                            const SizedBox(width: 8),
-                            _buildThemeOption(
-                              label: 'System',
-                              icon: Icons.settings_brightness_outlined,
-                              pref: AppThemePreference.system,
-                              currentPref: bankService.themePreference,
-                              onSelect: () => bankService.setThemePreference(AppThemePreference.system),
-                              isDark: isDark,
-                            ),
-                          ],
-                        ),
+                        Row(children: [
+                          Icon(Icons.palette_outlined, color: sub, size: 20),
+                          const SizedBox(width: 14),
+                          Text('Theme Mode', style: TextStyle(color: textColor, fontSize: 15, fontWeight: FontWeight.bold)),
+                        ]),
+                        Row(children: [
+                          _themePill('System', AppThemePreference.system, bankService, textColor, isDark),
+                          const SizedBox(width: 6),
+                          _themePill('Dark', AppThemePreference.dark, bankService, textColor, isDark),
+                          const SizedBox(width: 6),
+                          _themePill('Light', AppThemePreference.light, bankService, textColor, isDark),
+                        ]),
                       ],
                     ),
                   ),
 
                   const SizedBox(height: 24),
 
-                  // SECTION 2: SECURITY & PRIVACY
-                  _buildSectionHeader('SECURITY & PRIVACY', subtextColor),
-                  const SizedBox(height: 12),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: cardBgColor,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: borderColor),
-                    ),
-                    child: Column(
-                      children: [
-                        _buildSettingTile(
-                          icon: Icons.lock_outline_rounded,
-                          title: 'Change Password',
-                          subtitle: 'Last updated 3 months ago',
-                          hasChevron: true,
-                          isDark: isDark,
-                          textColor: textColor,
-                          subtextColor: subtextColor,
-                        ),
-                        Divider(color: borderColor, height: 1),
-                        _buildSettingTile(
-                          icon: Icons.fingerprint_rounded,
-                          title: 'Biometric Login',
-                          subtitle: 'FaceID or Fingerprint',
-                          isDark: isDark,
-                          textColor: textColor,
-                          subtextColor: subtextColor,
-                          trailing: Switch(
-                            value: _biometricsEnabled,
-                            activeColor: const Color(0xFF00C88C),
-                            onChanged: (val) => setState(() => _biometricsEnabled = val),
-                          ),
-                        ),
-                        Divider(color: borderColor, height: 1),
-                        _buildSettingTile(
-                          icon: Icons.security_rounded,
-                          title: 'Two-Factor Auth',
-                          subtitle: 'Enabled (SMS & Email)',
-                          hasChevron: true,
-                          isDark: isDark,
-                          textColor: textColor,
-                          subtextColor: subtextColor,
-                        ),
-                      ],
-                    ),
-                  ),
+                  // SECURITY
+                  _sectionHeader('SECURITY', sub),
+                  const SizedBox(height: 10),
+                  _cardContainer(cardBg, divColor, [
+                    _switchTile(Icons.fingerprint_rounded, 'Biometrics / Face ID', _biometricsEnabled, textColor, sub, green, (v) => setState(() => _biometricsEnabled = v)),
+                    _divider(divColor),
+                    _switchTile(Icons.notifications_outlined, 'Push Notifications', _notificationsEnabled, textColor, sub, green, (v) => setState(() => _notificationsEnabled = v)),
+                    _divider(divColor),
+                    _tile(Icons.lock_outline_rounded, 'Change Transaction PIN', '••••', textColor, sub, green, () {}),
+                  ]),
 
                   const SizedBox(height: 24),
 
-                  // SECTION 3: APP PREFERENCES
-                  _buildSectionHeader('APP PREFERENCES', subtextColor),
-                  const SizedBox(height: 12),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: cardBgColor,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: borderColor),
-                    ),
-                    child: Column(
-                      children: [
-                        _buildSettingTile(
-                          icon: Icons.translate_rounded,
-                          title: 'Language',
-                          subtitle: 'English (US)',
-                          hasChevron: true,
-                          isDark: isDark,
-                          textColor: textColor,
-                          subtextColor: subtextColor,
-                        ),
-                        Divider(color: borderColor, height: 1),
-                        _buildSettingTile(
-                          icon: Icons.notifications_none_rounded,
-                          title: 'Notifications',
-                          subtitle: 'Push, Email, SMS',
-                          hasChevron: true,
-                          isDark: isDark,
-                          textColor: textColor,
-                          subtextColor: subtextColor,
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 28),
-
-                  // LOG OUT BUTTON
+                  // LOGOUT BUTTON
                   SizedBox(
                     width: double.infinity,
-                    height: 54,
-                    child: OutlinedButton(
+                    height: 52,
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFFD32F2F), width: 1.2),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+                      ),
                       onPressed: () {
                         bankService.logout();
                         Navigator.of(context).pushAndRemoveUntil(
@@ -299,99 +204,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           (route) => false,
                         );
                       },
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Color(0xFFE53935), width: 1.2),
-                        backgroundColor: isDark ? const Color(0xFF0F1714) : const Color(0xFFFFEBEE),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(28),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          Icon(Icons.logout_rounded, color: Color(0xFFFF4D4D), size: 20),
-                          SizedBox(width: 8),
-                          Text(
-                            'Log Out',
-                            style: TextStyle(
-                              color: Color(0xFFFF4D4D),
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
+                      icon: const Icon(Icons.logout_rounded, color: Color(0xFFD32F2F), size: 18),
+                      label: const Text('Log Out', style: TextStyle(color: Color(0xFFD32F2F), fontWeight: FontWeight.bold, fontSize: 15)),
                     ),
                   ),
+                  const SizedBox(height: 24),
                 ],
               ),
             ),
 
-            // BOTTOM NAVIGATION BAR
+            // FLOATING BOTTOM NAV BAR
             Positioned(
               left: 20,
               right: 20,
               bottom: 20,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF0B1713).withOpacity(0.95) : Colors.white.withOpacity(0.95),
-                  borderRadius: BorderRadius.circular(36),
-                  border: Border.all(color: borderColor, width: 1.2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.15),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildNavItem(
-                      icon: Icons.home_filled,
-                      label: 'Home',
-                      isActive: false,
-                      subtextColor: subtextColor,
-                      onTap: () {
-                        Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(builder: (_) => const DashboardScreen()),
-                        );
-                      },
-                    ),
-                    _buildNavItem(
-                      icon: Icons.credit_card_rounded,
-                      label: 'Cards',
-                      isActive: false,
-                      subtextColor: subtextColor,
-                      onTap: () {
-                        Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(builder: (_) => const CardsScreen()),
-                        );
-                      },
-                    ),
-                    _buildNavItem(
-                      icon: Icons.insights_rounded,
-                      label: 'Insights',
-                      isActive: false,
-                      subtextColor: subtextColor,
-                      onTap: () {
-                        Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(builder: (_) => const AiAssistantScreen()),
-                        );
-                      },
-                    ),
-                    _buildNavItem(
-                      icon: Icons.person_rounded,
-                      label: 'Profile',
-                      isActive: true,
-                      subtextColor: subtextColor,
-                      onTap: () {},
-                    ),
-                  ],
-                ),
-              ),
+              child: _navBar(isDark: isDark, divColor: divColor, sub: sub, context: context),
             ),
           ],
         ),
@@ -399,155 +226,114 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildThemeOption({
-    required String label,
-    required IconData icon,
-    required AppThemePreference pref,
-    required AppThemePreference currentPref,
-    required VoidCallback onSelect,
-    required bool isDark,
-  }) {
-    final isSelected = pref == currentPref;
-
-    return Expanded(
-      child: GestureDetector(
-        onTap: onSelect,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? const Color(0xFF00C88C)
-                : (isDark ? const Color(0xFF07241A) : const Color(0xFFE2EDE8)),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isSelected ? const Color(0xFF00C88C) : Colors.transparent,
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                color: isSelected ? Colors.black : (isDark ? Colors.white70 : const Color(0xFF0B1F17)),
-                size: 18,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  color: isSelected ? Colors.black : (isDark ? Colors.white : const Color(0xFF0B1F17)),
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                  fontSize: 13,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(String title, Color subtextColor) {
+  Widget _sectionHeader(String title, Color sub) {
     return Align(
       alignment: Alignment.centerLeft,
       child: Text(
         title,
-        style: TextStyle(
-          color: subtextColor,
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 1.2,
-        ),
+        style: TextStyle(color: sub, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2),
       ),
     );
   }
 
-  Widget _buildSettingTile({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required bool isDark,
-    required Color textColor,
-    required Color subtextColor,
-    bool hasChevron = false,
-    Widget? trailing,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+  Widget _cardContainer(Color cardBg, Color divColor, List<Widget> children) {
+    return Container(
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: divColor),
+      ),
+      child: Column(children: children),
+    );
+  }
+
+  Widget _divider(Color divColor) => Divider(height: 1, color: divColor, indent: 48);
+
+  Widget _tile(IconData icon, String title, String subtitle, Color textColor, Color sub, Color green, VoidCallback onTap) {
+    return ListTile(
+      onTap: onTap,
+      leading: Icon(icon, color: sub, size: 20),
+      title: Text(title, style: TextStyle(color: textColor, fontSize: 14, fontWeight: FontWeight.w600)),
+      subtitle: Text(subtitle, style: TextStyle(color: sub, fontSize: 12)),
+      trailing: Icon(Icons.chevron_right_rounded, color: sub, size: 20),
+    );
+  }
+
+  Widget _switchTile(IconData icon, String title, bool value, Color textColor, Color sub, Color green, ValueChanged<bool> onChanged) {
+    return SwitchListTile(
+      value: value,
+      onChanged: onChanged,
+      activeColor: green,
+      secondary: Icon(icon, color: sub, size: 20),
+      title: Text(title, style: TextStyle(color: textColor, fontSize: 14, fontWeight: FontWeight.w600)),
+    );
+  }
+
+  Widget _themePill(String label, AppThemePreference pref, BankingService service, Color textColor, bool isDark) {
+    const green = Color(0xFF00C88C);
+    final selected = service.themePreference == pref;
+    return GestureDetector(
+      onTap: () => service.setThemePreference(pref),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected ? green : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: selected ? green : Colors.transparent),
+        ),
+        child: Text(label, style: TextStyle(
+          color: selected ? Colors.black : textColor,
+          fontSize: 12,
+          fontWeight: selected ? FontWeight.bold : FontWeight.w500,
+        )),
+      ),
+    );
+  }
+
+  Widget _navBar({required bool isDark, required Color divColor, required Color sub, required BuildContext context}) {
+    const green = Color(0xFF00C88C);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF0B1713).withOpacity(0.97) : Colors.white.withOpacity(0.97),
+        borderRadius: BorderRadius.circular(36),
+        border: Border.all(color: divColor, width: 1.2),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.25), blurRadius: 20, offset: const Offset(0, 10))],
+      ),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF07241A) : const Color(0xFFE2EDE8),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.security_outlined, color: Color(0xFF00C88C), size: 20),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: textColor,
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: TextStyle(color: subtextColor, fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-          if (trailing != null) trailing,
-          if (hasChevron)
-            Icon(Icons.chevron_right_rounded, color: subtextColor, size: 22),
+          _navItem(Iconsax.home_2, 'Home', false, sub, green, () =>
+            Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const DashboardScreen()))),
+          _navItem(Iconsax.card, 'Cards', false, sub, green, () =>
+            Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const CardsScreen()))),
+          _navItem(Iconsax.receipt_text, 'Bills', false, sub, green, () =>
+            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BillsScreen()))),
+          _navItem(Iconsax.chart_21, 'Insights', false, sub, green, () =>
+            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AiAssistantScreen()))),
+          _navItem(Iconsax.user, 'Profile', true, sub, green, () {}),
         ],
       ),
     );
   }
 
-  Widget _buildNavItem({
-    required IconData icon,
-    required String label,
-    required bool isActive,
-    required Color subtextColor,
-    required VoidCallback onTap,
-  }) {
+  Widget _navItem(IconData icon, String label, bool active, Color sub, Color green, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: EdgeInsets.all(isActive ? 8 : 4),
-            decoration: BoxDecoration(
-              color: isActive ? const Color(0xFF0E4735) : Colors.transparent,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              icon,
-              color: isActive ? const Color(0xFF00E676) : subtextColor,
-              size: 22,
-            ),
+      behavior: HitTestBehavior.opaque,
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          decoration: BoxDecoration(
+            color: active ? green : Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
           ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: TextStyle(
-              color: isActive ? const Color(0xFF00E676) : subtextColor,
-              fontSize: 11,
-              fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-            ),
-          ),
-        ],
-      ),
+          child: Icon(icon, color: active ? Colors.black : sub, size: 20),
+        ),
+        const SizedBox(height: 2),
+        Text(label, style: TextStyle(color: active ? green : sub, fontSize: 10, fontWeight: active ? FontWeight.bold : FontWeight.w500)),
+      ]),
     );
   }
 }

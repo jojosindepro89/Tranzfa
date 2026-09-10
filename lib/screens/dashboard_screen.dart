@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
+import '../models/banking_models.dart';
 import '../services/banking_service.dart';
-import '../theme/app_theme.dart';
 import '../widgets/vtu_modal.dart';
 import '../services/vtu_service.dart';
 import 'cards_screen.dart';
-import 'yield_screen.dart';
 import 'bills_screen.dart';
-import 'ai_assistant_screen.dart';
 import 'profile_screen.dart';
 import 'send_money_screen.dart';
+import 'transaction_history_screen.dart';
 import 'transaction_receipt_screen.dart';
 import 'savings_goals_screen.dart';
-import 'transaction_history_screen.dart';
+import 'ai_assistant_screen.dart';
+import 'notifications_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -22,7 +23,6 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  int _currentNavIndex = 0;
   bool _isBalanceVisible = true;
 
   String _formatAmount(double amount) {
@@ -34,173 +34,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return '$integerPart.${parts[1]}';
   }
 
+  String _greeting() {
+    final h = DateTime.now().hour;
+    if (h < 12) return 'Good Morning';
+    if (h < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  }
+
   void _openSendMoney() {
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const SendMoneyScreen()),
     );
   }
 
-  void _openBills() {
+  void _openVtu(VtuCategory cat) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => VtuPurchaseModal(initialCategory: cat),
+    );
+  }
+
+  void _openAiAnalysis() {
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const BillsScreen()),
-    );
-  }
-
-  void _openVtu(VtuCategory category) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => VtuPurchaseModal(initialCategory: category),
-    );
-  }
-
-  void _showGlobalAccountsModal(BuildContext context) {
-    final bankService = Provider.of<BankingService>(context, listen: false);
-    final details = bankService.globalBankDetails;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(24),
-          decoration: const BoxDecoration(
-            color: Color(0xFF0B1713),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-            border: Border(top: BorderSide(color: Color(0xFF00C88C), width: 2)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.white24,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 18),
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF00C88C).withOpacity(0.15),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.public_rounded, color: Color(0xFF00C88C), size: 24),
-                  ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Global USD & EUR Accounts',
-                          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                        SizedBox(height: 2),
-                        Text(
-                          'Receive remote salary & wire transfers directly into stablecoins',
-                          style: TextStyle(color: Colors.white70, fontSize: 12),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-
-              // USD ACH / FEDWIRE CARD
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF14241E),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: const Color(0xFF1E3A2F)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
-                        Text('🇺🇸 USD Account (Fedwire / ACH)', style: TextStyle(color: Color(0xFF00C88C), fontWeight: FontWeight.bold, fontSize: 14)),
-                        Icon(Icons.verified_user_rounded, color: Color(0xFF00C88C), size: 18),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Text('Bank Name: ${details.usdBankName}', style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                    const SizedBox(height: 4),
-                    Text('Routing Number: ${details.usdRoutingNumber}', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 4),
-                    Text('Account Number: ${details.usdAccountNumber}', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 4),
-                    Text('Beneficiary: ${details.beneficiaryName}', style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // EUR SEPA IBAN CARD
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF14241E),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: const Color(0xFF1E3A2F)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
-                        Text('🇪🇺 EUR IBAN (SEPA / SWIFT)', style: TextStyle(color: Color(0xFF00C88C), fontWeight: FontWeight.bold, fontSize: 14)),
-                        Icon(Icons.verified_user_rounded, color: Color(0xFF00C88C), size: 18),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Text('Bank Name: ${details.eurBankName}', style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                    const SizedBox(height: 4),
-                    Text('IBAN: ${details.eurIban}', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 4),
-                    Text('BIC / SWIFT: ${details.eurBicSwift}', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Global USD & EUR account details copied to clipboard! 📋')),
-                    );
-                  },
-                  icon: const Icon(Icons.copy_rounded, color: Colors.black, size: 20),
-                  label: const Text('Copy Account Details', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 15)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00C88C),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+      MaterialPageRoute(builder: (_) => const AiAssistantScreen()),
     );
   }
 
@@ -210,11 +68,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final activeAcc = bankService.activeAccount;
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark ? AppTheme.darkBg : AppTheme.lightBg;
-    final cardBgColor = isDark ? AppTheme.darkCard : AppTheme.lightCard;
-    final borderColor = isDark ? AppTheme.darkCardBorder : AppTheme.lightCardBorder;
-    final textColor = isDark ? AppTheme.darkTextPrimary : AppTheme.lightTextPrimary;
-    final subtextColor = isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary;
+    final bgColor = isDark ? const Color(0xFF060D09) : const Color(0xFFF4F7F5);
+    final textColor = isDark ? Colors.white : const Color(0xFF0B1F17);
+    final subtextColor = isDark ? const Color(0xFF7A9489) : const Color(0xFF6B7E76);
+    final cardBgColor = isDark ? const Color(0xFF0D1E17) : Colors.white;
+    final borderColor = isDark ? const Color(0xFF162E24) : const Color(0xFFE2EDE8);
+    const green = Color(0xFF00C88C);
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -224,11 +83,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             // MAIN DASHBOARD SCROLLABLE CONTENT
             Positioned.fill(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // HEADER (USER AVATAR, WELCOME TEXT, NOTIFICATION BELL)
+                    // ── HEADER (USER AVATAR, WELCOME TEXT, AI SPARKLE BUTTON, NOTIFICATION BELL) ──
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -243,12 +102,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               child: Container(
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  border: Border.all(color: const Color(0xFF00C88C), width: 2),
+                                  border: Border.all(color: green, width: 1.5),
                                 ),
-                                child: const CircleAvatar(
-                                  radius: 22,
-                                  backgroundColor: Color(0xFFD4A373),
-                                  child: Icon(Icons.person, color: Colors.white, size: 26),
+                                child: CircleAvatar(
+                                  radius: 20,
+                                  backgroundColor: isDark ? const Color(0xFF1A3328) : const Color(0xFFD0EAE0),
+                                  child: Text(
+                                    bankService.userFirstName.isNotEmpty ? bankService.userFirstName[0] : 'S',
+                                    style: const TextStyle(color: green, fontWeight: FontWeight.bold, fontSize: 16),
+                                  ),
                                 ),
                               ),
                             ),
@@ -267,7 +129,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  'Good Morning, ${bankService.userFirstName}',
+                                  '${_greeting()}, ${bankService.userFirstName}',
                                   style: TextStyle(
                                     color: textColor,
                                     fontSize: 18,
@@ -279,96 +141,150 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ],
                         ),
 
-                        // Notification Bell Icon Button
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(builder: (_) => const TransactionHistoryScreen()),
-                            );
-                          },
-                          child: Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF0F1A15) : const Color(0xFFE2EDE8),
-                              shape: BoxShape.circle,
-                              border: Border.all(color: borderColor),
-                            ),
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                Icon(Icons.notifications_none_rounded, color: textColor, size: 22),
-                                Positioned(
-                                  top: 11,
-                                  right: 12,
-                                  child: Container(
-                                    width: 8,
-                                    height: 8,
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFFE5B800),
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
+                        // Action Buttons: AI Analysis Sparkle + Notification Bell
+                        Row(
+                          children: [
+                            GestureDetector(
+                              onTap: _openAiAnalysis,
+                              child: Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: isDark ? const Color(0xFF0D281E) : const Color(0xFFE2EDE8),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: green.withOpacity(0.4)),
                                 ),
-                              ],
+                                child: const Icon(Iconsax.magic_star, color: green, size: 20),
+                              ),
                             ),
-                          ),
+                            const SizedBox(width: 8),
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+                                );
+                              },
+                              child: Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: isDark ? const Color(0xFF0F1A15) : const Color(0xFFE2EDE8),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: borderColor),
+                                ),
+                                child: Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    Icon(Iconsax.notification, color: textColor, size: 20),
+                                    Positioned(
+                                      top: 9,
+                                      right: 10,
+                                      child: Container(
+                                        width: 7,
+                                        height: 7,
+                                        decoration: const BoxDecoration(
+                                          color: Color(0xFFE5B800),
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
 
                     const SizedBox(height: 24),
 
-                    // MULTI-ASSET WALLET SELECTOR BAR (KAST MULTI-CURRENCY HUB)
-                    SizedBox(
-                      height: 40,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: bankService.accounts.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 8),
-                        itemBuilder: (context, index) {
-                          final acc = bankService.accounts[index];
-                          final isSelected = acc.code == activeAcc.code;
-                          return GestureDetector(
-                            onTap: () {
-                              bankService.setSelectedCurrency(acc.code);
-                            },
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? const Color(0xFF00C88C)
-                                    : (isDark ? const Color(0xFF0E1C17) : const Color(0xFFE0EAE5)),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? const Color(0xFF00C88C)
-                                      : (isDark ? const Color(0xFF1E382E) : const Color(0xFFCBDCD5)),
+                    // ── PENDING COMPLIANCE / FRAUD HELD ALERT BANNER ──
+                    if (bankService.transactions.any((tx) => tx.status == TransactionStatus.pending)) ...[
+                      Builder(builder: (context) {
+                        final pendingTx = bankService.transactions.firstWhere((tx) => tx.status == TransactionStatus.pending);
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => TransactionReceiptScreen(
+                                  transactionRef: pendingTx.id,
+                                  amount: pendingTx.amount,
+                                  recipientName: pendingTx.recipientName,
+                                  bankName: pendingTx.recipientTagOrIban,
+                                  dateTimeText: 'Just Now',
+                                  transactionFee: '₦10.00',
+                                  statusText: 'HELD_FOR_REVIEW',
                                 ),
                               ),
-                              child: Row(
-                                children: [
-                                  Text(acc.flag, style: const TextStyle(fontSize: 14)),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    acc.code,
-                                    style: TextStyle(
-                                      color: isSelected ? Colors.black : textColor,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            );
+                          },
+                          child: Container(
+                            width: double.infinity,
+                            margin: const EdgeInsets.only(bottom: 16),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF261904),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: const Color(0xFFF59E0B), width: 1.2),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFFF59E0B).withOpacity(0.15),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
                             ),
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 16),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF59E0B).withOpacity(0.2),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(Icons.security_rounded, color: Color(0xFFF59E0B), size: 22),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'ACTION REQUIRED • CBN FRAUD HOLD',
+                                        style: TextStyle(
+                                          color: Color(0xFFF59E0B),
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w800,
+                                          letterSpacing: 1.0,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'Transfer of ₦${_formatAmount(pendingTx.amount)} is held under review.',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      const Text(
+                                        'Tap to perform identity verification',
+                                        style: TextStyle(color: Colors.white70, fontSize: 11),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFFF59E0B), size: 14),
+                              ],
+                            ),
+                          ),
+                        );
+                      }),
+                    ],
 
-                    // TOTAL BALANCE CARD
+                    // ── TOTAL BALANCE CARD ──
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(24),
@@ -411,7 +327,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   });
                                 },
                                 child: Icon(
-                                  _isBalanceVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                                  _isBalanceVisible ? Iconsax.eye : Iconsax.eye_slash,
                                   color: const Color(0xFFB0C4BC),
                                   size: 20,
                                 ),
@@ -435,7 +351,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                           const SizedBox(height: 24),
 
-                          // Top Up and Analytics Buttons
+                          // Top Up & Analytics Buttons
                           Row(
                             children: [
                               Expanded(
@@ -453,7 +369,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: const [
-                                      Icon(Icons.add_circle, size: 18, color: Color(0xFF043324)),
+                                      Icon(Iconsax.add_circle, size: 18, color: Color(0xFF043324)),
                                       SizedBox(width: 8),
                                       Text(
                                         'Top Up',
@@ -469,11 +385,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: OutlinedButton(
-                                  onPressed: () {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(builder: (_) => const SavingsGoalsScreen()),
-                                    );
-                                  },
+                                  onPressed: _openAiAnalysis,
                                   style: OutlinedButton.styleFrom(
                                     side: const BorderSide(color: Color(0xFF1E5240), width: 1.5),
                                     backgroundColor: const Color(0xFF07241A).withOpacity(0.5),
@@ -485,7 +397,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: const [
-                                      Icon(Icons.history_toggle_off_rounded, size: 18, color: Colors.white),
+                                      Icon(Iconsax.chart_2, size: 18, color: Colors.white),
                                       SizedBox(width: 8),
                                       Text(
                                         'Analytics',
@@ -505,118 +417,50 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ),
 
-                    const SizedBox(height: 14),
-
-                    // GLOBAL ACCOUNTS BANNER (KAST USD ACH / EUR IBAN)
-                    GestureDetector(
-                      onTap: () => _showGlobalAccountsModal(context),
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF0A1C16) : const Color(0xFFE4F2EC),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: const Color(0xFF00C88C).withOpacity(0.4)),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF00C88C).withOpacity(0.15),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(Icons.public_rounded, color: Color(0xFF00C88C), size: 20),
-                                ),
-                                const SizedBox(width: 12),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: const [
-                                    Text(
-                                      'Global Bank Details (USD / EUR)',
-                                      style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
-                                    ),
-                                    SizedBox(height: 2),
-                                    Text(
-                                      'ACH Routing: 021000021 • SEPA IBAN',
-                                      style: TextStyle(color: Color(0xFF00C88C), fontSize: 11, fontWeight: FontWeight.w500),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            const Icon(Icons.chevron_right_rounded, color: Color(0xFF00C88C), size: 22),
-                          ],
-                        ),
-                      ),
-                    ),
-
                     const SizedBox(height: 28),
 
-                    // CONSOLIDATED QUICK ACTION UTILITY GRID (Send, Transfer, Electric, WiFi, Bills, Airtime)
+                    // ── QUICK ACTION ICONS ROW (Send, Request, Bills, Airtime) ──
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        _buildActionButton(
-                          icon: Icons.near_me_rounded,
+                        _buildQuickAction(
+                          icon: Iconsax.send_2,
                           label: 'Send',
-                          isHighlight: true,
                           isDark: isDark,
                           subtextColor: subtextColor,
                           onTap: _openSendMoney,
                         ),
-                        _buildActionButton(
-                          icon: Icons.swap_horiz_rounded,
-                          label: 'Transfer',
-                          isHighlight: false,
+                        _buildQuickAction(
+                          icon: Iconsax.document_text,
+                          label: 'Request',
                           isDark: isDark,
                           subtextColor: subtextColor,
                           onTap: _openSendMoney,
                         ),
-                        _buildActionButton(
-                          icon: Icons.bolt_rounded,
-                          label: 'Electric',
-                          isHighlight: false,
+                        _buildQuickAction(
+                          icon: Iconsax.receipt_text,
+                          label: 'Bills',
                           isDark: isDark,
                           subtextColor: subtextColor,
-                          onTap: () => _openVtu(VtuCategory.electricity),
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const BillsScreen()),
+                          ),
                         ),
-                        _buildActionButton(
-                          icon: Icons.wifi_rounded,
-                          label: 'WiFi',
-                          isHighlight: false,
+                        _buildQuickAction(
+                          icon: Iconsax.mobile,
+                          label: 'Airtime',
                           isDark: isDark,
                           subtextColor: subtextColor,
-                          onTap: () => _openVtu(VtuCategory.data),
-                        ),
-                        _buildActionButton(
-                          icon: Icons.savings_outlined,
-                          label: 'Savings',
-                          isHighlight: false,
-                          isDark: isDark,
-                          subtextColor: subtextColor,
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(builder: (_) => const SavingsGoalsScreen()),
-                            );
-                          },
+                          onTap: () => _openVtu(VtuCategory.airtime),
                         ),
                       ],
                     ),
 
                     const SizedBox(height: 28),
 
-                    // SMART INSIGHT CARD
+                    // ── SMART INSIGHT CARD (OPENS AI ANALYSIS SCREEN) ──
                     GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const SavingsGoalsScreen()),
-                        );
-                      },
+                      onTap: _openAiAnalysis,
                       child: Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(16),
@@ -633,21 +477,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 color: isDark ? const Color(0xFF0A3326) : const Color(0xFFC0EADA),
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(Icons.auto_awesome, color: Color(0xFF00C88C), size: 20),
+                              child: const Icon(Iconsax.magic_star, color: green, size: 20),
                             ),
                             const SizedBox(width: 14),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
-                                    'SMART INSIGHT',
-                                    style: TextStyle(
-                                      color: Color(0xFF00C88C),
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 0.8,
-                                    ),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: const [
+                                      Text(
+                                        'SMART INSIGHT',
+                                        style: TextStyle(
+                                          color: green,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w800,
+                                          letterSpacing: 0.8,
+                                        ),
+                                      ),
+                                      Icon(Iconsax.arrow_right_3, color: green, size: 14),
+                                    ],
                                   ),
                                   const SizedBox(height: 4),
                                   RichText(
@@ -660,7 +510,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       children: [
                                         const TextSpan(text: 'You spent '),
                                         TextSpan(
-                                          text: '₦45,000',
+                                          text: '${activeAcc.symbol}45,000',
                                           style: TextStyle(fontWeight: FontWeight.bold, color: textColor),
                                         ),
                                         const TextSpan(text: ' on food this week. That’s '),
@@ -680,9 +530,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ),
 
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 28),
 
-                    // MY CARDS SECTION HEADER
+                    // ── MY CARDS SECTION HEADER ──
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -690,7 +540,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           'My Cards',
                           style: TextStyle(
                             color: textColor,
-                            fontSize: 20,
+                            fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -703,8 +553,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           child: const Text(
                             'See All',
                             style: TextStyle(
-                              color: Color(0xFF00C88C),
-                              fontSize: 14,
+                              color: green,
+                              fontSize: 13,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -712,181 +562,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ],
                     ),
 
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
 
-                    // MY CARDS CAROUSEL ITEM
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      clipBehavior: Clip.none,
-                      child: Row(
+                    // Horizontal Bank Cards Scroll
+                    SizedBox(
+                      height: 190,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
                         children: [
-                          // Main Emerald Debit Card
-                          Container(
-                            width: MediaQuery.of(context).size.width * 0.82,
-                            height: 200,
-                            padding: const EdgeInsets.all(22),
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  Color(0xFF063B29),
-                                  Color(0xFF03261A),
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(24),
-                              border: Border.all(color: const Color(0xFF0C543A), width: 1.2),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.3),
-                                  blurRadius: 16,
-                                  offset: const Offset(0, 8),
-                                ),
-                              ],
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                // Card Header (Brand & Contactless)
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: const [
-                                        Text(
-                                          'TRANZFA',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.w900,
-                                            fontStyle: FontStyle.italic,
-                                            letterSpacing: 1.5,
-                                          ),
-                                        ),
-                                        Text(
-                                          'PLATINUM DEBIT',
-                                          style: TextStyle(
-                                            color: Color(0xFF8BA398),
-                                            fontSize: 9,
-                                            fontWeight: FontWeight.bold,
-                                            letterSpacing: 1.1,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const Icon(Icons.wifi_rounded, color: Color(0xFF8BA398), size: 24),
-                                  ],
-                                ),
-
-                                // Masked Card Number
-                                Row(
-                                  children: const [
-                                    Text(
-                                      '∗ ∗ ∗ ∗   ∗ ∗ ∗ ∗   ∗ ∗ ∗ ∗   ',
-                                      style: TextStyle(
-                                        color: Colors.white70,
-                                        fontSize: 18,
-                                        letterSpacing: 2,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    Text(
-                                      '8 8 2 1',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                        letterSpacing: 2,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-
-                                // Card Bottom (Holder & Mastercard logo)
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        const Text(
-                                          'CARD HOLDER',
-                                          style: TextStyle(
-                                            color: Color(0xFF6E857B),
-                                            fontSize: 9,
-                                            fontWeight: FontWeight.bold,
-                                            letterSpacing: 1.0,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          bankService.userFullName.toUpperCase(),
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.bold,
-                                            letterSpacing: 1.2,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    // Mastercard Red & Yellow overlapping circles
-                                    SizedBox(
-                                      width: 44,
-                                      height: 28,
-                                      child: Stack(
-                                        children: [
-                                          Container(
-                                            width: 26,
-                                            height: 26,
-                                            decoration: const BoxDecoration(
-                                              color: Color(0xFFEB001B),
-                                              shape: BoxShape.circle,
-                                            ),
-                                          ),
-                                          Positioned(
-                                            left: 14,
-                                            child: Container(
-                                              width: 26,
-                                              height: 26,
-                                              decoration: BoxDecoration(
-                                                color: const Color(0xFFF79E1B).withOpacity(0.9),
-                                                shape: BoxShape.circle,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
+                          _buildBankCard(
+                            cardName: 'TRANZFA',
+                            cardType: 'PLATINUM DEBIT',
+                            cardNumber: '8 8 2 1',
+                            holderName: 'SARAH OKONJO',
+                            bgGradient: const [Color(0xFF043324), Color(0xFF022117)],
+                            borderColor: const Color(0xFF0B523B),
                           ),
-
                           const SizedBox(width: 14),
-
-                          // Peeking Second Card (Dark Blue / Black Card)
-                          Container(
-                            width: MediaQuery.of(context).size.width * 0.18,
-                            height: 200,
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFF0F1A30), Color(0xFF090E1A)],
-                              ),
-                              borderRadius: BorderRadius.circular(24),
-                              border: Border.all(color: const Color(0xFF1E2D4A)),
-                            ),
+                          _buildBankCard(
+                            cardName: 'TRANZFA',
+                            cardType: 'BLACK VIP',
+                            cardNumber: '4 5 2 1',
+                            holderName: 'SARAH OKONJO',
+                            bgGradient: const [Color(0xFF141F2B), Color(0xFF080D13)],
+                            borderColor: const Color(0xFF23364A),
                           ),
                         ],
                       ),
                     ),
 
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 28),
 
-                    // RECENT ACTIVITY HEADER
+                    // ── RECENT ACTIVITY SECTION ──
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -894,7 +601,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           'Recent Activity',
                           style: TextStyle(
                             color: textColor,
-                            fontSize: 20,
+                            fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -904,84 +611,70 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               MaterialPageRoute(builder: (_) => const TransactionHistoryScreen()),
                             );
                           },
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF0F1A15) : const Color(0xFFE2EDE8),
-                              shape: BoxShape.circle,
-                              border: Border.all(color: borderColor),
-                            ),
-                            child: Icon(Icons.tune_rounded, color: textColor, size: 18),
+                          child: Icon(Iconsax.setting_4, color: subtextColor, size: 20),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    // Dynamic Transaction Items
+                    ...bankService.transactions.map((tx) {
+                      final isPending = tx.status == TransactionStatus.pending;
+                      final isIncome = tx.isIncome;
+                      final icon = isPending
+                          ? Icons.security_rounded
+                          : (isIncome ? Iconsax.wallet_3 : Iconsax.send_2);
+                      final iconBg = isPending
+                          ? const Color(0xFF3B2503)
+                          : (isIncome ? const Color(0xFF0A3326) : const Color(0xFF142E24));
+                      final iconColor = isPending
+                          ? const Color(0xFFF59E0B)
+                          : (isIncome ? green : const Color(0xFF00C88C));
+                      final subtitleText = isPending
+                          ? '${tx.recipientTagOrIban} • PENDING VERIFICATION'
+                          : tx.recipientTagOrIban;
+
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => TransactionReceiptScreen(
+                                  transactionRef: tx.id,
+                                  amount: tx.amount,
+                                  recipientName: tx.recipientName,
+                                  bankName: tx.recipientTagOrIban,
+                                  dateTimeText: 'Recent',
+                                  transactionFee: '₦10.00',
+                                  statusText: isPending ? 'HELD_FOR_REVIEW' : 'SUCCESSFUL',
+                                ),
+                              ),
+                            );
+                          },
+                          child: _buildTransactionCard(
+                            icon: icon,
+                            iconBg: iconBg,
+                            iconColor: iconColor,
+                            title: tx.recipientName,
+                            subtitle: subtitleText,
+                            amount: '${isIncome ? '+' : '-'}${activeAcc.symbol}${_formatAmount(tx.amount)}',
+                            isNegative: !isIncome,
+                            cardBgColor: cardBgColor,
+                            borderColor: isPending ? const Color(0xFFF59E0B).withOpacity(0.5) : borderColor,
+                            textColor: textColor,
+                            subtextColor: isPending ? const Color(0xFFF59E0B) : subtextColor,
                           ),
                         ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // RECENT TRANSACTIONS FEED LIST
-                    Column(
-                      children: [
-                        _buildTransactionRow(
-                          icon: Icons.movie_outlined,
-                          iconBgColor: const Color(0xFF331518),
-                          iconColor: const Color(0xFFFF4D4D),
-                          title: 'Netflix Subscription',
-                          subtitle: '24 Oct, 2023 • 10:45 AM',
-                          amountText: '-₦4,500.00',
-                          isDebit: true,
-                          cardBgColor: cardBgColor,
-                          borderColor: borderColor,
-                          textColor: textColor,
-                          subtextColor: subtextColor,
-                        ),
-                        _buildTransactionRow(
-                          icon: Icons.person_outline_rounded,
-                          iconBgColor: const Color(0xFF0A2B20),
-                          iconColor: const Color(0xFF00C88C),
-                          title: 'Transfer to Sarah',
-                          subtitle: '23 Oct, 2023 • 08:12 PM',
-                          amountText: '-₦120,000.00',
-                          isDebit: true,
-                          cardBgColor: cardBgColor,
-                          borderColor: borderColor,
-                          textColor: textColor,
-                          subtextColor: subtextColor,
-                        ),
-                        _buildTransactionRow(
-                          icon: Icons.local_cafe_outlined,
-                          iconBgColor: const Color(0xFF2E2611),
-                          iconColor: const Color(0xFFE5B800),
-                          title: 'Starbucks Coffee',
-                          subtitle: '23 Oct, 2023 • 09:30 AM',
-                          amountText: '-₦2,450.00',
-                          isDebit: true,
-                          cardBgColor: cardBgColor,
-                          borderColor: borderColor,
-                          textColor: textColor,
-                          subtextColor: subtextColor,
-                        ),
-                        _buildTransactionRow(
-                          icon: Icons.account_balance_wallet_outlined,
-                          iconBgColor: const Color(0xFF0A2B20),
-                          iconColor: const Color(0xFF00C88C),
-                          title: 'Wallet Top-up',
-                          subtitle: '22 Oct, 2023 • 02:15 PM',
-                          amountText: '+₦50,000.00',
-                          isDebit: false,
-                          cardBgColor: cardBgColor,
-                          borderColor: borderColor,
-                          textColor: textColor,
-                          subtextColor: subtextColor,
-                        ),
-                      ],
-                    ),
+                      );
+                    }).toList(),
                   ],
                 ),
               ),
             ),
 
-            // FLOATING BOTTOM NAVIGATION BAR
+            // ── FLOATING BOTTOM NAV BAR ──
             Positioned(
               left: 20,
               right: 20,
@@ -989,12 +682,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF0B1713).withOpacity(0.95) : Colors.white.withOpacity(0.95),
+                  color: isDark ? const Color(0xFF0B1713) : Colors.white,
                   borderRadius: BorderRadius.circular(36),
                   border: Border.all(color: borderColor, width: 1.2),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.15),
+                      color: Colors.black.withOpacity(0.25),
                       blurRadius: 20,
                       offset: const Offset(0, 10),
                     ),
@@ -1004,48 +697,62 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     _buildNavItem(
-                      index: 0,
-                      icon: Icons.home_filled,
+                      icon: Iconsax.home_2,
                       label: 'Home',
-                      isActive: _currentNavIndex == 0,
+                      isActive: true,
+                      isDark: isDark,
                       subtextColor: subtextColor,
-                      onTap: () => setState(() => _currentNavIndex = 0),
+                      green: green,
+                      onTap: () {},
                     ),
                     _buildNavItem(
-                      index: 1,
-                      icon: Icons.credit_card_rounded,
+                      icon: Iconsax.card,
                       label: 'Cards',
-                      isActive: _currentNavIndex == 1,
+                      isActive: false,
+                      isDark: isDark,
                       subtextColor: subtextColor,
+                      green: green,
                       onTap: () {
-                        setState(() => _currentNavIndex = 1);
-                        Navigator.of(context).push(
+                        Navigator.of(context).pushReplacement(
                           MaterialPageRoute(builder: (_) => const CardsScreen()),
                         );
                       },
                     ),
                     _buildNavItem(
-                      index: 2,
-                      icon: Icons.history_rounded,
-                      label: 'History',
-                      isActive: _currentNavIndex == 2,
+                      icon: Iconsax.receipt_text,
+                      label: 'Bills',
+                      isActive: false,
+                      isDark: isDark,
                       subtextColor: subtextColor,
+                      green: green,
                       onTap: () {
-                        setState(() => _currentNavIndex = 2);
                         Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const TransactionHistoryScreen()),
+                          MaterialPageRoute(builder: (_) => const BillsScreen()),
                         );
                       },
                     ),
                     _buildNavItem(
-                      index: 3,
-                      icon: Icons.person_outline_rounded,
-                      label: 'Profile',
-                      isActive: _currentNavIndex == 3,
+                      icon: Iconsax.chart_21,
+                      label: 'Insights',
+                      isActive: false,
+                      isDark: isDark,
                       subtextColor: subtextColor,
+                      green: green,
                       onTap: () {
-                        setState(() => _currentNavIndex = 3);
                         Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const AiAssistantScreen()),
+                        );
+                      },
+                    ),
+                    _buildNavItem(
+                      icon: Iconsax.user,
+                      label: 'Profile',
+                      isActive: false,
+                      isDark: isDark,
+                      subtextColor: subtextColor,
+                      green: green,
+                      onTap: () {
+                        Navigator.of(context).pushReplacement(
                           MaterialPageRoute(builder: (_) => const ProfileScreen()),
                         );
                       },
@@ -1060,45 +767,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // Quick Action Round Icon Button
-  Widget _buildActionButton({
+  Widget _buildQuickAction({
     required IconData icon,
     required String label,
-    required bool isHighlight,
     required bool isDark,
     required Color subtextColor,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
-      behavior: HitTestBehavior.opaque,
       onTap: onTap,
+      behavior: HitTestBehavior.opaque,
       child: Column(
         children: [
           Container(
-            width: 54,
-            height: 54,
+            width: 58,
+            height: 58,
             decoration: BoxDecoration(
-              color: isHighlight
-                  ? const Color(0xFF0F4735)
-                  : (isDark ? const Color(0xFF0F1A15) : const Color(0xFFE2EDE8)),
+              color: isDark ? const Color(0xFF0F241C) : const Color(0xFFE2EDE8),
               shape: BoxShape.circle,
-              border: Border.all(
-                color: isHighlight ? const Color(0xFF00C88C) : (isDark ? const Color(0xFF1A2E24) : const Color(0xFFCBE0D7)),
-                width: 1.2,
-              ),
             ),
-            child: Icon(
-              icon,
-              color: const Color(0xFF00C88C),
-              size: 22,
-            ),
+            child: Icon(icon, color: const Color(0xFF00C88C), size: 24),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           Text(
             label,
             style: TextStyle(
-              color: subtextColor,
-              fontSize: 11,
+              color: isDark ? Colors.white70 : const Color(0xFF0B1F17),
+              fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -1107,55 +802,185 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // Recent Activity Row Item
-  Widget _buildTransactionRow({
+  Widget _buildBankCard({
+    required String cardName,
+    required String cardType,
+    required String cardNumber,
+    required String holderName,
+    required List<Color> bgGradient,
+    required Color borderColor,
+  }) {
+    return Container(
+      width: 290,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: bgGradient,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: borderColor, width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 15,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    cardName,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                      fontStyle: FontStyle.italic,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    cardType,
+                    style: const TextStyle(
+                      color: Color(0xFF7A9489),
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                ],
+              ),
+              const Icon(Icons.wifi_tethering, color: Colors.white60, size: 22),
+            ],
+          ),
+
+          // Masked card number
+          Row(
+            children: [
+              const Text(
+                '••••   ••••   ••••   ',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 16,
+                  letterSpacing: 2,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                cardNumber,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.5,
+                ),
+              ),
+            ],
+          ),
+
+          // Bottom card holder & Mastercard logo
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'CARD HOLDER',
+                    style: TextStyle(
+                      color: Color(0xFF7A9489),
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    holderName,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                ],
+              ),
+
+              // Mastercard Circles
+              SizedBox(
+                width: 36,
+                height: 22,
+                child: Stack(
+                  children: [
+                    Container(
+                      width: 22,
+                      height: 22,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFEB001B),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    Positioned(
+                      left: 14,
+                      child: Container(
+                        width: 22,
+                        height: 22,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFF79E1B),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTransactionCard({
     required IconData icon,
-    required Color iconBgColor,
+    required Color iconBg,
     required Color iconColor,
     required String title,
     required String subtitle,
-    required String amountText,
-    required bool isDebit,
+    required String amount,
+    required bool isNegative,
     required Color cardBgColor,
     required Color borderColor,
     required Color textColor,
     required Color subtextColor,
   }) {
-    return GestureDetector(
-      onTap: () {
-        final amtRaw = double.tryParse(amountText.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 150000.0;
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => TransactionReceiptScreen(
-              recipientName: title.contains('Transfer') ? 'Oluwaseun Adeyemi' : title,
-              bankName: 'Kuda Bank',
-              bankLogoText: 'K',
-              bankLogoColor: const Color(0xFF00C88C),
-              amount: amtRaw,
-              currencySymbol: '₦',
-              transactionRef: 'TZ-9948201-X',
-              dateTimeText: subtitle.isNotEmpty ? subtitle : 'Oct 24, 2023, 14:20',
-              transactionFee: '₦10.00',
-              statusText: 'SUCCESSFUL',
-            ),
-          ),
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: cardBgColor,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: borderColor),
-        ),
-        child: Row(
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: cardBgColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: borderColor),
+      ),
+      child: Row(
         children: [
           Container(
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: iconBgColor,
+              color: iconBg,
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: iconColor, size: 20),
@@ -1185,53 +1010,52 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
           Text(
-            amountText,
+            amount,
             style: TextStyle(
-              color: isDebit ? const Color(0xFFFF5252) : const Color(0xFF00E676),
+              color: isNegative ? const Color(0xFFFF5252) : const Color(0xFF00C88C),
               fontSize: 15,
               fontWeight: FontWeight.bold,
             ),
           ),
         ],
       ),
-    ),
-  );
-}
+    );
+  }
 
-  // Bottom Navigation Bar Item
   Widget _buildNavItem({
-    required int index,
     required IconData icon,
     required String label,
     required bool isActive,
+    required bool isDark,
     required Color subtextColor,
+    required Color green,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
-      behavior: HitTestBehavior.opaque,
       onTap: onTap,
+      behavior: HitTestBehavior.opaque,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: EdgeInsets.all(isActive ? 8 : 4),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             decoration: BoxDecoration(
-              color: isActive ? const Color(0xFF0E4735) : Colors.transparent,
-              shape: BoxShape.circle,
+              color: isActive ? green : Colors.transparent,
+              borderRadius: BorderRadius.circular(20),
             ),
             child: Icon(
               icon,
-              color: isActive ? const Color(0xFF00E676) : subtextColor,
-              size: 22,
+              color: isActive ? Colors.black : subtextColor,
+              size: 20,
             ),
           ),
           const SizedBox(height: 2),
           Text(
             label,
             style: TextStyle(
-              color: isActive ? const Color(0xFF00E676) : subtextColor,
+              color: isActive ? green : subtextColor,
               fontSize: 11,
-              fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+              fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
             ),
           ),
         ],

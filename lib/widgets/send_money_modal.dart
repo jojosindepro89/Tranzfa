@@ -235,7 +235,16 @@ class _SendMoneyModalState extends State<SendMoneyModal> {
           children: [
             CircleAvatar(
               radius: 16,
-              backgroundImage: NetworkImage(avatar),
+              backgroundColor: AppTheme.emeraldAccent.withOpacity(0.2),
+              child: ClipOval(
+                child: Image.network(
+                  avatar,
+                  width: 32,
+                  height: 32,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const Icon(Icons.person, color: AppTheme.emeraldAccent, size: 18),
+                ),
+              ),
             ),
             const SizedBox(width: 8),
             Column(
@@ -290,9 +299,9 @@ class _SendMoneyModalState extends State<SendMoneyModal> {
                     style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
                     underline: const SizedBox(),
                     items: const [
-                      DropdownMenuItem(value: 'USD', child: Text('🇺🇸 USD')),
-                      DropdownMenuItem(value: 'EUR', child: Text('🇪🇺 EUR')),
-                      DropdownMenuItem(value: 'GBP', child: Text('🇬🇧 GBP')),
+                      DropdownMenuItem(value: 'USD', child: Text(' USD')),
+                      DropdownMenuItem(value: 'EUR', child: Text(' EUR')),
+                      DropdownMenuItem(value: 'GBP', child: Text(' GBP')),
                       DropdownMenuItem(value: 'USDC', child: Text('₮ USDC')),
                     ],
                     onChanged: (val) {
@@ -333,14 +342,14 @@ class _SendMoneyModalState extends State<SendMoneyModal> {
         const SizedBox(height: 10),
         _buildRailOption(
           RailType.speedRail,
-          '⚡ Lightning Rail (<2 sec)',
+          ' Lightning Rail (<2 sec)',
           'Instant Settlement via Tranzfa Global Core',
           'Free',
         ),
         const SizedBox(height: 8),
         _buildRailOption(
           RailType.swift,
-          '🏦 SWIFT / Fedwire (ISO 20022)',
+          ' SWIFT / Fedwire (ISO 20022)',
           'Standard Global Institutional Bank Wire',
           '\$2.50',
         ),
@@ -437,7 +446,7 @@ class _SendMoneyModalState extends State<SendMoneyModal> {
               CircularProgressIndicator(color: AppTheme.goldPrimary),
               SizedBox(height: 12),
               Text(
-                'Routing through ⚡ Lightning Speed Rail...',
+                'Routing through  Lightning Speed Rail...',
                 style: TextStyle(color: AppTheme.goldPrimary, fontSize: 12, fontWeight: FontWeight.bold),
               ),
             ],
@@ -455,7 +464,7 @@ class _SendMoneyModalState extends State<SendMoneyModal> {
             itemBuilder: (context, index) {
               if (index == 9) return const SizedBox();
               if (index == 10) return _buildKeypadButton('0', () => _onPinDigit('0'));
-              if (index == 11) return _buildKeypadButton('⌫', _onPinDelete);
+              if (index == 11) return _buildKeypadButton('', _onPinDelete);
               final digit = (index + 1).toString();
               return _buildKeypadButton(digit, () => _onPinDigit(digit));
             },
@@ -515,7 +524,7 @@ class _SendMoneyModalState extends State<SendMoneyModal> {
               const Divider(color: Colors.white12),
               _buildReceiptRow('Recipient', _recipientController.text),
               const Divider(color: Colors.white12),
-              _buildReceiptRow('Rail Network', '⚡ Tranzfa Lightning Rail'),
+              _buildReceiptRow('Rail Network', ' Tranzfa Lightning Rail'),
               const Divider(color: Colors.white12),
               _buildReceiptRow('Transaction ID', 'TX-${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}'),
             ],

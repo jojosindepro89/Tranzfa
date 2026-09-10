@@ -338,7 +338,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: isVerifyingPin
                           ? const CircularProgressIndicator(color: Colors.black)
                           : const Text(
-                              'Complete 3FA Login 🚀',
+                              'Complete 3FA Login ',
                               style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),
                             ),
                     ),

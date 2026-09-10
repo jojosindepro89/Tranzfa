@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:iconsax/iconsax.dart';
+import '../services/api_service.dart';
 import 'dashboard_screen.dart';
 import 'profile_screen.dart';
 import 'cards_screen.dart';
+import 'bills_screen.dart';
 import 'yield_screen.dart';
 
 class AiAssistantScreen extends StatefulWidget {
@@ -13,6 +16,7 @@ class AiAssistantScreen extends StatefulWidget {
 
 class _AiAssistantScreenState extends State<AiAssistantScreen> {
   final TextEditingController _inputController = TextEditingController();
+  bool _isLoading = false;
   final List<Map<String, dynamic>> _messages = [
     {
       'isUser': false,
@@ -42,26 +46,34 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
     },
   ];
 
-  void _sendMessage(String text) {
-    if (text.trim().isEmpty) return;
+  Future<void> _sendMessage(String text) async {
+    if (text.trim().isEmpty || _isLoading) return;
+    final userPrompt = text.trim();
     setState(() {
       _messages.add({
         'isUser': true,
-        'text': text.trim(),
+        'text': userPrompt,
       });
       _inputController.clear();
+      _isLoading = true;
     });
 
-    Future.delayed(const Duration(milliseconds: 800), () {
-      if (mounted) {
-        setState(() {
+    final res = await ApiService.sendAiChatPrompt(message: userPrompt);
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        if (res['reply'] != null) {
           _messages.add({
             'isUser': false,
-            'text': "I've updated your budget goals and allocated \$42.50 to your Emergency Fund vault!",
+            'text': res['reply'],
           });
-        });
-      }
-    });
+        }
+        if (res['card'] != null && res['card'] is Map<String, dynamic>) {
+          _messages.add(res['card']);
+        }
+      });
+    }
   }
 
   @override
@@ -318,7 +330,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     _buildNavItem(
-                      icon: Icons.home_filled,
+                      icon: Iconsax.home_2,
                       label: 'Home',
                       isActive: false,
                       subtextColor: subtextColor,
@@ -329,7 +341,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                       },
                     ),
                     _buildNavItem(
-                      icon: Icons.credit_card_rounded,
+                      icon: Iconsax.card,
                       label: 'Cards',
                       isActive: false,
                       subtextColor: subtextColor,
@@ -340,14 +352,25 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                       },
                     ),
                     _buildNavItem(
-                      icon: Icons.insights_rounded,
+                      icon: Iconsax.receipt_text,
+                      label: 'Bills',
+                      isActive: false,
+                      subtextColor: subtextColor,
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const BillsScreen()),
+                        );
+                      },
+                    ),
+                    _buildNavItem(
+                      icon: Iconsax.chart_21,
                       label: 'Insights',
                       isActive: true,
                       subtextColor: subtextColor,
                       onTap: () {},
                     ),
                     _buildNavItem(
-                      icon: Icons.person_rounded,
+                      icon: Iconsax.user,
                       label: 'Profile',
                       isActive: false,
                       subtextColor: subtextColor,
@@ -589,30 +612,32 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
     required Color subtextColor,
     required VoidCallback onTap,
   }) {
+    const green = Color(0xFF00C88C);
     return GestureDetector(
       onTap: onTap,
+      behavior: HitTestBehavior.opaque,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: EdgeInsets.all(isActive ? 8 : 4),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             decoration: BoxDecoration(
-              color: isActive ? const Color(0xFF0E4735) : Colors.transparent,
-              shape: BoxShape.circle,
+              color: isActive ? green : Colors.transparent,
+              borderRadius: BorderRadius.circular(20),
             ),
             child: Icon(
               icon,
-              color: isActive ? const Color(0xFF00E676) : subtextColor,
-              size: 22,
+              color: isActive ? Colors.black : subtextColor,
+              size: 20,
             ),
           ),
           const SizedBox(height: 2),
           Text(
             label,
             style: TextStyle(
-              color: isActive ? const Color(0xFF00E676) : subtextColor,
-              fontSize: 11,
-              fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+              color: isActive ? green : subtextColor,
+              fontSize: 10,
+              fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
             ),
           ),
         ],

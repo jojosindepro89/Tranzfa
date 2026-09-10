@@ -85,8 +85,8 @@ class VtuService {
   /// Fetch list of Airtime Providers
   static List<VtuProvider> getAirtimeProviders() {
     return [
-      VtuProvider(id: 'mtn', name: 'MTN Nigeria', code: 'mtn', iconAsset: '📱', category: VtuCategory.airtime),
-      VtuProvider(id: 'airtel', name: 'Airtel Nigeria', code: 'airtel', iconAsset: '🔴', category: VtuCategory.airtime),
+      VtuProvider(id: 'mtn', name: 'MTN Nigeria', code: 'mtn', iconAsset: '', category: VtuCategory.airtime),
+      VtuProvider(id: 'airtel', name: 'Airtel Nigeria', code: 'airtel', iconAsset: '', category: VtuCategory.airtime),
       VtuProvider(id: 'glo', name: 'Glo Mobile', code: 'glo', iconAsset: '🟢', category: VtuCategory.airtime),
       VtuProvider(id: '9mobile', name: '9mobile', code: '9mobile', iconAsset: '🟢', category: VtuCategory.airtime),
     ];
@@ -130,22 +130,22 @@ class VtuService {
   /// Fetch Electricity Discos
   static List<VtuProvider> getElectricityDiscos() {
     return [
-      VtuProvider(id: 'ikeja-electric', name: 'Ikeja Electric (IKEDC)', code: 'ikeja-electric', iconAsset: '⚡', category: VtuCategory.electricity),
-      VtuProvider(id: 'eko-electric', name: 'Eko Electric (EKEDC)', code: 'eko-electric', iconAsset: '🔌', category: VtuCategory.electricity),
-      VtuProvider(id: 'abuja-electric', name: 'Abuja Electric (AEDC)', code: 'abuja-electric', iconAsset: '💡', category: VtuCategory.electricity),
-      VtuProvider(id: 'kano-electric', name: 'Kano Electric (KEDCO)', code: 'kano-electric', iconAsset: '⚡', category: VtuCategory.electricity),
-      VtuProvider(id: 'ibadan-electric', name: 'Ibadan Electric (IBEDC)', code: 'ibadan-electric', iconAsset: '🔌', category: VtuCategory.electricity),
-      VtuProvider(id: 'enugu-electric', name: 'Enugu Electric (EEDC)', code: 'enugu-electric', iconAsset: '💡', category: VtuCategory.electricity),
+      VtuProvider(id: 'ikeja-electric', name: 'Ikeja Electric (IKEDC)', code: 'ikeja-electric', iconAsset: '', category: VtuCategory.electricity),
+      VtuProvider(id: 'eko-electric', name: 'Eko Electric (EKEDC)', code: 'eko-electric', iconAsset: '', category: VtuCategory.electricity),
+      VtuProvider(id: 'abuja-electric', name: 'Abuja Electric (AEDC)', code: 'abuja-electric', iconAsset: '', category: VtuCategory.electricity),
+      VtuProvider(id: 'kano-electric', name: 'Kano Electric (KEDCO)', code: 'kano-electric', iconAsset: '', category: VtuCategory.electricity),
+      VtuProvider(id: 'ibadan-electric', name: 'Ibadan Electric (IBEDC)', code: 'ibadan-electric', iconAsset: '', category: VtuCategory.electricity),
+      VtuProvider(id: 'enugu-electric', name: 'Enugu Electric (EEDC)', code: 'enugu-electric', iconAsset: '', category: VtuCategory.electricity),
     ];
   }
 
   /// Fetch Cable TV Providers & Packages
   static List<VtuProvider> getCableProviders() {
     return [
-      VtuProvider(id: 'dstv', name: 'DSTV Cable TV', code: 'dstv', iconAsset: '📺', category: VtuCategory.cableTv),
-      VtuProvider(id: 'gotv', name: 'GOtv Digital', code: 'gotv', iconAsset: '📺', category: VtuCategory.cableTv),
-      VtuProvider(id: 'startimes', name: 'StarTimes TV', code: 'startimes', iconAsset: '📺', category: VtuCategory.cableTv),
-      VtuProvider(id: 'showmax', name: 'Showmax Streaming', code: 'showmax', iconAsset: '🎬', category: VtuCategory.cableTv),
+      VtuProvider(id: 'dstv', name: 'DSTV Cable TV', code: 'dstv', iconAsset: '', category: VtuCategory.cableTv),
+      VtuProvider(id: 'gotv', name: 'GOtv Digital', code: 'gotv', iconAsset: '', category: VtuCategory.cableTv),
+      VtuProvider(id: 'startimes', name: 'StarTimes TV', code: 'startimes', iconAsset: '', category: VtuCategory.cableTv),
+      VtuProvider(id: 'showmax', name: 'Showmax Streaming', code: 'showmax', iconAsset: '', category: VtuCategory.cableTv),
     ];
   }
 

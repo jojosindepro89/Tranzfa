@@ -61,7 +61,7 @@ class _FxSwapModalState extends State<FxSwapModal> {
                   Icon(Icons.swap_horizontal_circle, color: AppTheme.goldPrimary, size: 24),
                   SizedBox(width: 8),
                   Text(
-                    'Kast Auto-Convert & Swap',
+                    'Tranzfa Auto-Convert & Swap',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -95,8 +95,8 @@ class _FxSwapModalState extends State<FxSwapModal> {
                       items: const [
                         DropdownMenuItem(value: 'USDC', child: Text('₮ USDC')),
                         DropdownMenuItem(value: 'BTC', child: Text('₿ BTC')),
-                        DropdownMenuItem(value: 'USD', child: Text('🇺🇸 USD')),
-                        DropdownMenuItem(value: 'EUR', child: Text('🇪🇺 EUR')),
+                        DropdownMenuItem(value: 'USD', child: Text(' USD')),
+                        DropdownMenuItem(value: 'EUR', child: Text(' EUR')),
                       ],
                       onChanged: (val) {
                         if (val != null) setState(() => _fromAsset = val);
@@ -156,9 +156,9 @@ class _FxSwapModalState extends State<FxSwapModal> {
                       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
                       underline: const SizedBox(),
                       items: const [
-                        DropdownMenuItem(value: 'USD', child: Text('🇺🇸 USD')),
-                        DropdownMenuItem(value: 'EUR', child: Text('🇪🇺 EUR')),
-                        DropdownMenuItem(value: 'GBP', child: Text('🇬🇧 GBP')),
+                        DropdownMenuItem(value: 'USD', child: Text(' USD')),
+                        DropdownMenuItem(value: 'EUR', child: Text(' EUR')),
+                        DropdownMenuItem(value: 'GBP', child: Text(' GBP')),
                         DropdownMenuItem(value: 'USDC', child: Text('₮ USDC')),
                       ],
                       onChanged: (val) {

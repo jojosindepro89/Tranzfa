@@ -122,3 +122,34 @@ class GlobalBankDetails {
   });
 }
 
+enum KycTierLevel { tier1, tier2, tier3 }
+
+enum KycVerificationStatus { unverified, pending, verified }
+
+class KycTierInfo {
+  final KycTierLevel level;
+  final String title;
+  final String badgeText;
+  final String description;
+  final double dailyLimit;
+  final double singleLimit;
+  final double maxBalance; // -1 for unlimited
+  final List<String> requirements;
+  final List<String> perks;
+  final KycVerificationStatus status;
+
+  KycTierInfo({
+    required this.level,
+    required this.title,
+    required this.badgeText,
+    required this.description,
+    required this.dailyLimit,
+    required this.singleLimit,
+    required this.maxBalance,
+    required this.requirements,
+    required this.perks,
+    required this.status,
+  });
+}
+
+

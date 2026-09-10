@@ -119,7 +119,7 @@ class _SavingsGoalsScreenState extends State<SavingsGoalsScreen> {
               ),
               const SizedBox(height: 18),
               Text(
-                'Create New Savings Goal 🎯',
+                'Create New Savings Goal ',
                 style: TextStyle(
                   color: isDark ? Colors.white : const Color(0xFF0B1F17),
                   fontSize: 20,
