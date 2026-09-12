@@ -13,8 +13,8 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _credentialsController = TextEditingController(text: "sarah.okonjo@tranzfa.io");
-  final TextEditingController _passwordController = TextEditingController(text: "••••••••");
+  final TextEditingController _credentialsController = TextEditingController(text: "demo@user.com");
+  final TextEditingController _passwordController = TextEditingController(text: "UserPass123!");
   bool _isPasswordVisible = false;
   bool _isLoading = false;
 
@@ -26,13 +26,23 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _handleLogin() async {
+    if (_credentialsController.text.trim().isEmpty || _passwordController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Color(0xFFEF531D),
+          content: Text('Please enter your email and password'),
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
 
     final res = await ApiService.loginFactor1(
-      email: _credentialsController.text,
-      password: _passwordController.text,
+      email: _credentialsController.text.trim(),
+      password: _passwordController.text.trim(),
     );
 
     setState(() {
@@ -42,11 +52,23 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
 
     if (res['success'] == true) {
-      // Prompt Factor 2 OTP Modal Sheet
-      _showFactor2OtpModal(res['email'] ?? _credentialsController.text, res['otpDemoCode'] ?? '123456');
+      if (res['requireOtp'] == true) {
+        _showFactor2OtpModal(res['email'] ?? _credentialsController.text, '123456');
+      } else {
+        final bankService = Provider.of<BankingService>(context, listen: false);
+        final email = res['user']?['email'] ?? _credentialsController.text.trim();
+        bankService.login(email, email);
+
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const DashboardScreen()),
+        );
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(res['message'] ?? 'Authentication failed')),
+        SnackBar(
+          backgroundColor: const Color(0xFFEF531D),
+          content: Text(res['message'] ?? 'Authentication failed'),
+        ),
       );
     }
   }

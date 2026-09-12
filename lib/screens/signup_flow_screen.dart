@@ -87,23 +87,39 @@ class _SignupFlowScreenState extends State<SignupFlowScreen> {
       _isCapturing = true;
     });
 
-    final name = _fullNameController.text.isNotEmpty ? _fullNameController.text : "Sarah Okonjo";
-    
-    await ApiService.registerUser(
+    final name = _fullNameController.text.isNotEmpty ? _fullNameController.text.trim() : "New Customer";
+    final uniqueTag = DateTime.now().millisecondsSinceEpoch.toString().substring(8);
+    final email = "${name.toLowerCase().replaceAll(' ', '')}$uniqueTag@bank.com";
+
+    final res = await ApiService.registerUser(
       fullName: name,
-      email: "sarah.okonjo@tranzfa.io",
+      email: email,
       phone: _phoneNumber.isNotEmpty ? _phoneNumber : "5551234567",
       bvn: _bvnController.text,
+      password: "UserPass123!",
     );
 
     if (!mounted) return;
-    final bankService = Provider.of<BankingService>(context, listen: false);
-    bankService.login(name, "sarah.okonjo@tranzfa.io");
 
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const DashboardScreen()),
-      (route) => false,
-    );
+    if (res['success'] == true) {
+      final bankService = Provider.of<BankingService>(context, listen: false);
+      bankService.login(name, email);
+
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+        (route) => false,
+      );
+    } else {
+      setState(() {
+        _isCapturing = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: const Color(0xFFEF531D),
+          content: Text(res['message'] ?? 'Registration failed'),
+        ),
+      );
+    }
   }
 
   // Keypad Tap Handler for Step 1
