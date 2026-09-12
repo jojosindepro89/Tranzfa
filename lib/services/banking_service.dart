@@ -330,6 +330,11 @@ class BankingService extends ChangeNotifier {
 
   List<TranzfaCard> get cards => _cards;
 
+  void addCard(TranzfaCard card) {
+    _cards.insert(0, card);
+    notifyListeners();
+  }
+
   // Yield Vaults
   final List<YieldVault> _yieldVaults = [
     YieldVault(

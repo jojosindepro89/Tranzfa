@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
+import '../services/banking_service.dart';
+import '../services/api_service.dart';
+import '../models/banking_models.dart';
 import 'dashboard_screen.dart';
 import 'profile_screen.dart';
 import 'bills_screen.dart';
@@ -42,6 +46,190 @@ class _CardsScreenState extends State<CardsScreen> {
     if (v >= 1000000) return '₦${(v / 1000000).toStringAsFixed(1)}M';
     if (v >= 1000) return '₦${(v / 1000).toStringAsFixed(0)}K';
     return '₦${v.toStringAsFixed(0)}';
+  }
+
+  // 
+  // ISSUE CARD MODAL
+  // 
+  void _showIssueCardModal() {
+    String selectedCardType = 'VIRTUAL';
+    String selectedCardBrand = 'VISA';
+    bool isLoading = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return StatefulBuilder(builder: (ctx, setModal) {
+          return Container(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom,
+            ),
+            decoration: const BoxDecoration(
+              color: _darkBg,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+              border: Border(top: BorderSide(color: _green, width: 2)),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40, height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  const Text('Issue New Payment Card', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  const Text('Choose your card network and type below', style: TextStyle(color: Colors.white54, fontSize: 13)),
+                  const SizedBox(height: 24),
+
+                  const Text('CARD TYPE', style: TextStyle(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => setModal(() => selectedCardType = 'VIRTUAL'),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            decoration: BoxDecoration(
+                              color: selectedCardType == 'VIRTUAL' ? _green.withOpacity(0.15) : Colors.white.withOpacity(0.05),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: selectedCardType == 'VIRTUAL' ? _green : Colors.white10),
+                            ),
+                            child: Column(
+                              children: [
+                                Icon(Iconsax.card, color: selectedCardType == 'VIRTUAL' ? _green : Colors.white54, size: 24),
+                                const SizedBox(height: 6),
+                                Text('Virtual Card', style: TextStyle(color: selectedCardType == 'VIRTUAL' ? Colors.white : Colors.white70, fontWeight: FontWeight.bold, fontSize: 13)),
+                                const Text('Instant Online', style: TextStyle(color: Colors.white38, fontSize: 10)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => setModal(() => selectedCardType = 'PHYSICAL'),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            decoration: BoxDecoration(
+                              color: selectedCardType == 'PHYSICAL' ? _green.withOpacity(0.15) : Colors.white.withOpacity(0.05),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: selectedCardType == 'PHYSICAL' ? _green : Colors.white10),
+                            ),
+                            child: Column(
+                              children: [
+                                Icon(Iconsax.card_pos, color: selectedCardType == 'PHYSICAL' ? _green : Colors.white54, size: 24),
+                                const SizedBox(height: 6),
+                                Text('Physical Debit', style: TextStyle(color: selectedCardType == 'PHYSICAL' ? Colors.white : Colors.white70, fontWeight: FontWeight.bold, fontSize: 13)),
+                                const Text('Delivered to home', style: TextStyle(color: Colors.white38, fontSize: 10)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 20),
+                  const Text('CARD BRAND', style: TextStyle(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: ['VISA', 'MASTERCARD', 'VERVE'].map((brand) {
+                      final selected = selectedCardBrand == brand;
+                      return Expanded(
+                        child: GestureDetector(
+                          onTap: () => setModal(() => selectedCardBrand = brand),
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              color: selected ? _green.withOpacity(0.2) : Colors.white.withOpacity(0.05),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: selected ? _green : Colors.white10),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              brand,
+                              style: TextStyle(
+                                color: selected ? _green : Colors.white70,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: isLoading ? null : () async {
+                        setModal(() => isLoading = true);
+
+                        final res = await ApiService.issuePaymentCard(
+                          cardBrand: selectedCardBrand,
+                          cardType: selectedCardType,
+                          cardholderName: Provider.of<BankingService>(context, listen: false).userFullName,
+                        );
+
+                        if (context.mounted) {
+                          final bankService = Provider.of<BankingService>(context, listen: false);
+                          final cardNum = res['card_number'] ?? '4111 9028 1029 ${DateTime.now().millisecondsSinceEpoch.toString().substring(9)}';
+                          
+                          bankService.addCard(
+                            TranzfaCard(
+                              id: 'card_${DateTime.now().millisecondsSinceEpoch}',
+                              cardNumber: cardNum,
+                              expiryDate: '12/29',
+                              cvv: '${(100 + DateTime.now().millisecond % 899)}',
+                              cardHolderName: bankService.userFullName,
+                              cardType: '$selectedCardType $selectedCardBrand',
+                              isGoldTier: true,
+                              isFrozen: false,
+                              monthlyLimit: 5000000.0,
+                              currentSpent: 0.0,
+                              cashbackEarnedUsdc: 0.0,
+                            ),
+                          );
+
+                          Navigator.pop(ctx);
+                          _showSuccessSnack(' $selectedCardBrand $selectedCardType Card Issued Successfully!');
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _green,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+                      ),
+                      child: isLoading
+                          ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
+                          : const Text('Confirm & Issue Card', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        });
+      },
+    );
   }
 
   // 
@@ -710,15 +898,18 @@ class _CardsScreenState extends State<CardsScreen> {
         title: Text('Your Cards', style: TextStyle(color: textColor, fontSize: 24, fontWeight: FontWeight.bold)),
         centerTitle: false,
         actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 16),
-            width: 40, height: 40,
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF0B1F17) : const Color(0xFFE2EDE8),
-              shape: BoxShape.circle,
-              border: Border.all(color: borderColor),
+          GestureDetector(
+            onTap: _showIssueCardModal,
+            child: Container(
+              margin: const EdgeInsets.only(right: 16),
+              width: 40, height: 40,
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF0B1F17) : const Color(0xFFE2EDE8),
+                shape: BoxShape.circle,
+                border: Border.all(color: borderColor),
+              ),
+              child: Icon(Iconsax.add, color: textColor, size: 22),
             ),
-            child: Icon(Iconsax.add, color: textColor, size: 22),
           ),
         ],
       ),
