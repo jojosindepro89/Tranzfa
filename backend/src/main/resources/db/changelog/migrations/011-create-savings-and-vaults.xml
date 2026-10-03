@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="011-create-savings-and-vaults" author="techlateef">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="savings_goals"/>
+            </not>
+        </preConditions>
+
+        <comment>Create savings_goals and vault_positions tables for goal tracking and APY interest vaults</comment>
+
+        <!-- SAVINGS_GOALS TABLE -->
+        <createTable tableName="savings_goals">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="customer_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_savings_goals_customer" references="customers(id)"/>
+            </column>
+            <column name="title" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="target_amount" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="current_amount" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="currency" type="VARCHAR(8)" defaultValue="USD">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(32)" defaultValue="IN_PROGRESS">
+                <constraints nullable="false"/>
+            </column>
+            <column name="target_date" type="DATE"/>
+            <column name="created_on" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_modified_on" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <!-- VAULT_POSITIONS TABLE -->
+        <createTable tableName="vault_positions">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="customer_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_vault_positions_customer" references="customers(id)"/>
+            </column>
+            <column name="vault_asset" type="VARCHAR(16)" defaultValue="USDC">
+                <constraints nullable="false"/>
+            </column>
+            <column name="principal_amount" type="NUMERIC(19, 6)" defaultValueNumeric="0.000000">
+                <constraints nullable="false"/>
+            </column>
+            <column name="accrued_interest" type="NUMERIC(19, 6)" defaultValueNumeric="0.000000">
+                <constraints nullable="false"/>
+            </column>
+            <column name="apy_rate" type="NUMERIC(6, 2)" defaultValueNumeric="8.50">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(32)" defaultValue="ACTIVE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_on" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_modified_on" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="savings_goals" indexName="idx_savings_goals_customer_id">
+            <column name="customer_id"/>
+        </createIndex>
+        <createIndex tableName="vault_positions" indexName="idx_vault_positions_customer_id">
+            <column name="customer_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

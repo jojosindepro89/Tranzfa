@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="005-create-external-account-mappings" author="techlateef">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="external_account_mappings"/>
+            </not>
+        </preConditions>
+
+        <comment>Create external_account_mappings table to isolate third-party BaaS/NIBSS provider metadata</comment>
+
+        <createTable tableName="external_account_mappings">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="account_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_ext_acct_map_account" references="accounts(id)"/>
+            </column>
+            <column name="provider" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="external_account_id" type="VARCHAR(128)"/>
+            <column name="external_customer_id" type="VARCHAR(128)"/>
+            <column name="bank_code" type="VARCHAR(32)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="bank_name" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="routing_code" type="VARCHAR(64)"/>
+            <column name="is_primary" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(32)" defaultValue="ACTIVE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="metadata_json" type="TEXT"/>
+            <column name="created_on" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_modified_on" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="external_account_mappings" indexName="idx_ext_acct_map_account_id">
+            <column name="account_id"/>
+        </createIndex>
+        <createIndex tableName="external_account_mappings" indexName="idx_ext_acct_map_provider">
+            <column name="provider"/>
+        </createIndex>
+        <createIndex tableName="external_account_mappings" indexName="idx_ext_acct_map_ext_id">
+            <column name="external_account_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

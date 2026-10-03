@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="012-create-kyc-compliance-table" author="techlateef">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="kyc_verifications"/>
+            </not>
+        </preConditions>
+
+        <comment>Create kyc_verifications table for BVN, NIN, and Tier 1-3 upgrades</comment>
+
+        <createTable tableName="kyc_verifications">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="customer_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_kyc_verifications_customer" references="customers(id)"/>
+            </column>
+            <column name="tier_level" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="bvn_masked" type="VARCHAR(32)"/>
+            <column name="nin_masked" type="VARCHAR(32)"/>
+            <column name="document_type" type="VARCHAR(64)"/>
+            <column name="document_url" type="VARCHAR(512)"/>
+            <column name="status" type="VARCHAR(32)" defaultValue="APPROVED">
+                <constraints nullable="false"/>
+            </column>
+            <column name="external_verification_id" type="VARCHAR(128)"/>
+            <column name="created_on" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_modified_on" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="kyc_verifications" indexName="idx_kyc_verifications_customer_id">
+            <column name="customer_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

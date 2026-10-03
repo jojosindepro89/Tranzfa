@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="014-create-audit-trail-table" author="techlateef">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="audit_logs"/>
+            </not>
+        </preConditions>
+
+        <comment>Create audit_logs table for regulatory compliance and security tracing</comment>
+
+        <createTable tableName="audit_logs">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="identity_id" type="BIGINT"/>
+            <column name="action" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="resource_type" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="resource_id" type="VARCHAR(128)"/>
+            <column name="ip_address" type="VARCHAR(64)"/>
+            <column name="user_agent" type="VARCHAR(512)"/>
+            <column name="details" type="TEXT"/>
+            <column name="created_on" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="audit_logs" indexName="idx_audit_logs_identity_id">
+            <column name="identity_id"/>
+        </createIndex>
+        <createIndex tableName="audit_logs" indexName="idx_audit_logs_action">
+            <column name="action"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <include file="migrations/001-create-identities-and-profiles.xml" relativeToChangelogFile="true"/>
+    <include file="migrations/002-create-authentication-credentials.xml" relativeToChangelogFile="true"/>
+    <include file="migrations/003-create-staff-authorization-rbac.xml" relativeToChangelogFile="true"/>
+    <include file="migrations/004-create-accounts-table.xml" relativeToChangelogFile="true"/>
+    <include file="migrations/005-create-external-account-mappings.xml" relativeToChangelogFile="true"/>
+    <include file="migrations/006-create-transactions-and-ledger.xml" relativeToChangelogFile="true"/>
+    <include file="migrations/007-create-external-transaction-mappings.xml" relativeToChangelogFile="true"/>
+    <include file="migrations/008-create-bill-payments-table.xml" relativeToChangelogFile="true"/>
+    <include file="migrations/009-create-fx-rates-and-swaps.xml" relativeToChangelogFile="true"/>
+    <include file="migrations/010-create-payment-cards-table.xml" relativeToChangelogFile="true"/>
+    <include file="migrations/011-create-savings-and-vaults.xml" relativeToChangelogFile="true"/>
+    <include file="migrations/012-create-kyc-compliance-table.xml" relativeToChangelogFile="true"/>
+    <include file="migrations/013-create-webhook-logs-table.xml" relativeToChangelogFile="true"/>
+    <include file="migrations/014-create-audit-trail-table.xml" relativeToChangelogFile="true"/>
+    <include file="migrations/015-seed-initial-data.xml" relativeToChangelogFile="true"/>
+
+</databaseChangeLog>

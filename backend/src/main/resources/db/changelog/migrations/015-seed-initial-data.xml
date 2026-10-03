@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="015-seed-initial-data" author="techlateef">
+        <comment>Seed default staff roles and permissions, demo customer Sarah Okonjo, checking account, and FX rates</comment>
+
+        <!-- SEED STAFF ROLES -->
+        <insert tableName="roles">
+            <column name="id" valueNumeric="1"/>
+            <column name="name" value="ROLE_SUPER_ADMIN"/>
+            <column name="description" value="System administrator with full control room access"/>
+        </insert>
+        <insert tableName="roles">
+            <column name="id" valueNumeric="2"/>
+            <column name="name" value="ROLE_COMPLIANCE_OFFICER"/>
+            <column name="description" value="AML, KYC, and dispute review compliance officer"/>
+        </insert>
+        <insert tableName="roles">
+            <column name="id" valueNumeric="3"/>
+            <column name="name" value="ROLE_OPS_MANAGER"/>
+            <column name="description" value="Operations manager for transfers and account inquiries"/>
+        </insert>
+
+        <!-- SEED STAFF PERMISSIONS -->
+        <insert tableName="permissions">
+            <column name="id" valueNumeric="1"/>
+            <column name="name" value="customer.read"/>
+            <column name="description" value="View customer profile and KYC details"/>
+        </insert>
+        <insert tableName="permissions">
+            <column name="id" valueNumeric="2"/>
+            <column name="name" value="customer.freeze"/>
+            <column name="description" value="Freeze or restrict customer accounts"/>
+        </insert>
+        <insert tableName="permissions">
+            <column name="id" valueNumeric="3"/>
+            <column name="name" value="kyc.review"/>
+            <column name="description" value="Approve or reject Tier 2 and Tier 3 BVN/NIN upgrades"/>
+        </insert>
+        <insert tableName="permissions">
+            <column name="id" valueNumeric="4"/>
+            <column name="name" value="transaction.read"/>
+            <column name="description" value="View financial transactions and ledger audit logs"/>
+        </insert>
+        <insert tableName="permissions">
+            <column name="id" valueNumeric="5"/>
+            <column name="name" value="transaction.hold_review"/>
+            <column name="description" value="Review high-value transactions held under CBN anti-fraud rules"/>
+        </insert>
+
+        <!-- ROLE PERMISSION MAPPINGS -->
+        <insert tableName="role_permissions">
+            <column name="role_id" valueNumeric="1"/>
+            <column name="permission_id" valueNumeric="1"/>
+        </insert>
+        <insert tableName="role_permissions">
+            <column name="role_id" valueNumeric="1"/>
+            <column name="permission_id" valueNumeric="2"/>
+        </insert>
+        <insert tableName="role_permissions">
+            <column name="role_id" valueNumeric="1"/>
+            <column name="permission_id" valueNumeric="3"/>
+        </insert>
+        <insert tableName="role_permissions">
+            <column name="role_id" valueNumeric="1"/>
+            <column name="permission_id" valueNumeric="4"/>
+        </insert>
+        <insert tableName="role_permissions">
+            <column name="role_id" valueNumeric="1"/>
+            <column name="permission_id" valueNumeric="5"/>
+        </insert>
+
+        <!-- SEED DEMO CUSTOMER IDENTITY -->
+        <insert tableName="identities">
+            <column name="id" valueNumeric="1"/>
+            <column name="public_id" value="usr_001"/>
+            <column name="identity_type" value="CUSTOMER"/>
+            <column name="status" value="ACTIVE"/>
+        </insert>
+
+        <!-- SEED DEMO CUSTOMER PROFILE -->
+        <insert tableName="customers">
+            <column name="id" valueNumeric="1"/>
+            <column name="identity_id" valueNumeric="1"/>
+            <column name="first_name" value="Sarah"/>
+            <column name="middle_name" value="Chioma"/>
+            <column name="last_name" value="Okonjo"/>
+            <column name="email" value="sarah.okonjo@tranzfa.io"/>
+            <column name="phone" value="+2348123456789"/>
+            <column name="avatar_url" value="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"/>
+            <column name="kyc_tier" value="TIER_3"/>
+        </insert>
+
+        <!-- SEED PASSWORD CREDENTIAL (Password: Password123!) -->
+        <insert tableName="password_credentials">
+            <column name="identity_id" valueNumeric="1"/>
+            <column name="password" value="$2a$10$w8.1k9sW6vG8sTz2hO4xaeiN8eA0aZpYkYhCqOQ1lU8mK3jL3o9.6"/>
+            <column name="failed_attempts" valueNumeric="0"/>
+        </insert>
+
+        <!-- SEED PIN CREDENTIAL (Factor 3 PIN: 1234) -->
+        <insert tableName="pin_credentials">
+            <column name="identity_id" valueNumeric="1"/>
+            <column name="pin" value="$2a$10$w8.1k9sW6vG8sTz2hO4xaeiN8eA0aZpYkYhCqOQ1lU8mK3jL3o9.6"/>
+            <column name="failed_attempts" valueNumeric="0"/>
+            <column name="is_set" valueBoolean="true"/>
+        </insert>
+
+        <!-- SEED PRIMARY SAVINGS ACCOUNT -->
+        <insert tableName="accounts">
+            <column name="id" valueNumeric="1"/>
+            <column name="customer_id" valueNumeric="1"/>
+            <column name="account_number" value="2048591823"/>
+            <column name="account_name" value="Sarah Okonjo / Tranzfa"/>
+            <column name="currency" value="NGN"/>
+            <column name="account_type" value="SAVINGS"/>
+            <column name="status" value="ACTIVE"/>
+            <column name="available_balance" valueNumeric="124050000"/>
+            <column name="ledger_balance" valueNumeric="124050000"/>
+            <column name="daily_limit" valueNumeric="1000000000"/>
+            <column name="version" valueNumeric="0"/>
+        </insert>
+
+        <!-- SEED EXTERNAL RAIL MAPPING (SafeHaven BaaS) -->
+        <insert tableName="external_account_mappings">
+            <column name="account_id" valueNumeric="1"/>
+            <column name="provider" value="SAFEHAVEN"/>
+            <column name="external_account_id" value="sh_sub_acc_001_sarah"/>
+            <column name="bank_code" value="090286"/>
+            <column name="bank_name" value="Safe Haven Microfinance Bank"/>
+            <column name="routing_code" value="090286"/>
+            <column name="is_primary" valueBoolean="true"/>
+            <column name="status" value="ACTIVE"/>
+        </insert>
+
+        <!-- SEED FX RATES -->
+        <insert tableName="fx_rates">
+            <column name="pair" value="NGN_USD"/>
+            <column name="rate" valueNumeric="0.00067000"/>
+            <column name="spread_percent" valueNumeric="0.5000"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+        <insert tableName="fx_rates">
+            <column name="pair" value="USD_NGN"/>
+            <column name="rate" valueNumeric="1492.50000000"/>
+            <column name="spread_percent" valueNumeric="0.5000"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+        <insert tableName="fx_rates">
+            <column name="pair" value="USDC_USD"/>
+            <column name="rate" valueNumeric="1.00000000"/>
+            <column name="spread_percent" valueNumeric="0.1000"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+        <insert tableName="fx_rates">
+            <column name="pair" value="BTC_USD"/>
+            <column name="rate" valueNumeric="64250.00000000"/>
+            <column name="spread_percent" valueNumeric="0.2500"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+        <insert tableName="fx_rates">
+            <column name="pair" value="ETH_USD"/>
+            <column name="rate" valueNumeric="3480.00000000"/>
+            <column name="spread_percent" valueNumeric="0.2500"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+        <insert tableName="fx_rates">
+            <column name="pair" value="SOL_USD"/>
+            <column name="rate" valueNumeric="145.20000000"/>
+            <column name="spread_percent" valueNumeric="0.3000"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>

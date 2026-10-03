@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="003-create-staff-authorization-rbac" author="techlateef">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="roles"/>
+            </not>
+        </preConditions>
+
+        <comment>Create RBAC tables (roles, permissions, role_permissions, staff_roles) for internal control room</comment>
+
+        <!-- ROLES TABLE -->
+        <createTable tableName="roles">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(64)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="description" type="VARCHAR(255)"/>
+            <column name="created_on" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_modified_on" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <!-- PERMISSIONS TABLE -->
+        <createTable tableName="permissions">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(64)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="description" type="VARCHAR(255)"/>
+            <column name="created_on" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_modified_on" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <!-- ROLE_PERMISSIONS JOIN TABLE -->
+        <createTable tableName="role_permissions">
+            <column name="role_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_role_permissions_role" references="roles(id)"/>
+            </column>
+            <column name="permission_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_role_permissions_perm" references="permissions(id)"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey tableName="role_permissions" columnNames="role_id, permission_id" constraintName="pk_role_permissions"/>
+
+        <!-- STAFF_ROLES JOIN TABLE -->
+        <createTable tableName="staff_roles">
+            <column name="staff_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_staff_roles_staff" references="staff_users(id)"/>
+            </column>
+            <column name="role_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_staff_roles_role" references="roles(id)"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey tableName="staff_roles" columnNames="staff_id, role_id" constraintName="pk_staff_roles"/>
+    </changeSet>
+
+</databaseChangeLog>
