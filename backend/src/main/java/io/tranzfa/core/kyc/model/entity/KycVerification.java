@@ -44,8 +44,14 @@ public class KycVerification extends BaseEntity {
 
     @Column(name = "status", nullable = false, length = 32)
     @Builder.Default
-    private String status = "APPROVED";
+    private String status = "PENDING_REVIEW";
 
     @Column(name = "external_verification_id", length = 128)
     private String externalVerificationId;
+
+    @Column(name = "rejection_reason", length = 512)
+    private String rejectionReason;
+
+    @Column(name = "reviewed_at")
+    private java.time.Instant reviewedAt;
 }

@@ -20,5 +20,8 @@
     <include file="migrations/013-create-webhook-logs-table.xml" relativeToChangelogFile="true"/>
     <include file="migrations/014-create-audit-trail-table.xml" relativeToChangelogFile="true"/>
     <include file="migrations/015-seed-initial-data.xml" relativeToChangelogFile="true"/>
+    <include file="migrations/016-add-device-tracking-to-customers.xml" relativeToChangelogFile="true"/>
+    <include file="migrations/017-add-review-fields-to-kyc-verifications.xml" relativeToChangelogFile="true"/>
+    <include file="migrations/018-sync-sequences.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

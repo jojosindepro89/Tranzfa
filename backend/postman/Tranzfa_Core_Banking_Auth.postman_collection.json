@@ -1,0 +1,930 @@
+{
+  "info": {
+    "name": "Tranzfa Core Banking - Auth & Identity API",
+    "_postman_id": "c1f7a40b-78a1-4cb3-a1c2-90fbc982305a",
+    "description": "Production-grade FinTech Identity & Multi-Factor Authentication (3FA) API collection for Tranzfa Core Banking.\n\nIncludes retail customer onboarding, isolated login flows for all supported authentication methods (Password, PIN, Biometric Passkey, and OTP), hardware key registration (FIDO2 WebAuthn), session lifecycle management, and back-office KYC compliance decisions.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "testPhone",
+      "value": "+2348012345678",
+      "type": "string"
+    },
+    {
+      "key": "testPassword",
+      "value": "Password123!",
+      "type": "string"
+    },
+    {
+      "key": "testPin",
+      "value": "1234",
+      "type": "string"
+    },
+    {
+      "key": "deviceId",
+      "value": "dev-ios-a918f-2831",
+      "type": "string"
+    },
+    {
+      "key": "deviceName",
+      "value": "iPhone 15 Pro",
+      "type": "string"
+    },
+    {
+      "key": "verificationToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "challengeToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "passkeyChallenge",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "credentialId",
+      "value": "cred_ios_f81729",
+      "type": "string"
+    },
+    {
+      "key": "verificationId",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Onboarding & Registration",
+      "description": "Four-step retail customer registration pipeline with phone verification, KYC capture, automatic NUBAN account provisioning, and document upload.",
+      "item": [
+        {
+          "name": "1.1 Initiate Phone Onboarding",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{testPhone}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/initiate-phone",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "initiate-phone"
+              ]
+            },
+            "description": "Step 1 of customer onboarding. Dispatches a 6-digit OTP to the recipient phone number. In mock mode, the system emits and accepts OTP 123456."
+          }
+        },
+        {
+          "name": "1.2 Verify Phone OTP (Registration)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response && response.data && response.data.verificationToken) {",
+                  "    pm.collectionVariables.set('verificationToken', response.data.verificationToken);",
+                  "    console.log('Captured verificationToken:', response.data.verificationToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{testPhone}}\",\n  \"otpCode\": \"123456\",\n  \"purpose\": \"REGISTRATION\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/otp/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "otp/verify"
+              ]
+            },
+            "description": "Step 2 of onboarding. Verifies the 6-digit OTP code and returns an authentic signed JWT verification token with purpose PHONE_VERIFIED."
+          }
+        },
+        {
+          "name": "1.3 Register Personal Details (Create Account)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response && response.data) {",
+                  "    if (response.data.accessToken) {",
+                  "        pm.collectionVariables.set('accessToken', response.data.accessToken);",
+                  "        console.log('Captured accessToken');",
+                  "    }",
+                  "    if (response.data.refreshToken) {",
+                  "        pm.collectionVariables.set('refreshToken', response.data.refreshToken);",
+                  "        console.log('Captured refreshToken');",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{testPhone}}\",\n  \"verificationToken\": \"{{verificationToken}}\",\n  \"firstName\": \"Sarah\",\n  \"middleName\": \"Chinyere\",\n  \"lastName\": \"Okonjo\",\n  \"email\": \"sarah.okonjo@example.com\",\n  \"password\": \"{{testPassword}}\",\n  \"bvnOrNin\": \"22233344455\",\n  \"dateOfBirth\": \"1998-05-12\",\n  \"address\": \"14 Marina Street, Lagos Island, Lagos State\",\n  \"gender\": \"FEMALE\",\n  \"deviceId\": \"{{deviceId}}\",\n  \"deviceName\": \"{{deviceName}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/personal-details",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "personal-details"
+              ]
+            },
+            "description": "Step 3 of onboarding. Validates the verification token, registers customer details, provisions a 10-digit NUBAN savings account, binds the primary hardware device, and issues initial Bearer tokens."
+          }
+        },
+        {
+          "name": "1.4 Upload KYC Document (Upgrade to Tier 3)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documentType\": \"NATIONAL_ID\",\n  \"idNumber\": \"NIN12345678901\",\n  \"documentUrl\": \"https://storage.tranzfa.io/kyc/nin_doc_sample.jpg\",\n  \"utilityBillUrl\": \"https://storage.tranzfa.io/kyc/utility_bill_sample.jpg\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/upload-document",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "upload-document"
+              ]
+            },
+            "description": "Step 4 of onboarding. Submits identity document and proof of address for Tier 3 compliance review."
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Authentication (Login Types)",
+      "description": "Dedicated requests for each individual authentication login mechanism supported by Tranzfa: Password, PIN, Biometric Passkey, and OTP.",
+      "item": [
+        {
+          "name": "2.1 Login - Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response && response.data) {",
+                  "    if (response.data.accessToken) {",
+                  "        pm.collectionVariables.set('accessToken', response.data.accessToken);",
+                  "    }",
+                  "    if (response.data.refreshToken) {",
+                  "        pm.collectionVariables.set('refreshToken', response.data.refreshToken);",
+                  "    }",
+                  "    if (response.data.challengeToken) {",
+                  "        pm.collectionVariables.set('challengeToken', response.data.challengeToken);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{testPhone}}\",\n  \"loginMethod\": \"PASSWORD\",\n  \"password\": \"{{testPassword}}\",\n  \"userType\": \"CUSTOMER\",\n  \"deviceId\": \"{{deviceId}}\",\n  \"deviceName\": \"{{deviceName}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Standard password authentication (Factor 1). Protected with 5-attempt lockout (15 minutes). If the device is unrecognized, returns a step-up challenge requiring OTP verification."
+          }
+        },
+        {
+          "name": "2.2 Login - PIN (Factor 3)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response && response.data) {",
+                  "    if (response.data.accessToken) {",
+                  "        pm.collectionVariables.set('accessToken', response.data.accessToken);",
+                  "    }",
+                  "    if (response.data.refreshToken) {",
+                  "        pm.collectionVariables.set('refreshToken', response.data.refreshToken);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{testPhone}}\",\n  \"loginMethod\": \"PIN\",\n  \"pin\": \"{{testPin}}\",\n  \"userType\": \"CUSTOMER\",\n  \"deviceId\": \"{{deviceId}}\",\n  \"deviceName\": \"{{deviceName}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Fast 4-digit PIN authentication (Factor 3). Protected with 3-attempt lockout (15 minutes) and BCrypt hashing."
+          }
+        },
+        {
+          "name": "2.3 Login - Passkey (Step 1: Request Challenge)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response && response.data && response.data.challengeNonce) {",
+                  "    pm.collectionVariables.set('passkeyChallenge', response.data.challengeNonce);",
+                  "    console.log('Captured passkeyChallenge:', response.data.challengeNonce);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/passkey/login-challenge?identifier={{testPhone}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "passkey",
+                "login-challenge"
+              ],
+              "query": [
+                {
+                  "key": "identifier",
+                  "value": "{{testPhone}}"
+                }
+              ]
+            },
+            "description": "Step 1 for FIDO2 Biometric Login. Generates a cryptographic nonce to be signed by the device's hardware authenticator (FaceID / TouchID / Android Keystore)."
+          }
+        },
+        {
+          "name": "2.4 Login - Passkey (Step 2: Submit Assertion)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response && response.data) {",
+                  "    if (response.data.accessToken) {",
+                  "        pm.collectionVariables.set('accessToken', response.data.accessToken);",
+                  "    }",
+                  "    if (response.data.refreshToken) {",
+                  "        pm.collectionVariables.set('refreshToken', response.data.refreshToken);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{testPhone}}\",\n  \"loginMethod\": \"PASSKEY\",\n  \"credentialId\": \"{{credentialId}}\",\n  \"challenge\": \"{{passkeyChallenge}}\",\n  \"signature\": \"mock_signature_hardware_enclave\",\n  \"signCount\": 1,\n  \"userType\": \"CUSTOMER\",\n  \"deviceId\": \"{{deviceId}}\",\n  \"deviceName\": \"{{deviceName}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Step 2 for FIDO2 Biometric Login. Submits the signed cryptographic assertion and credential ID. Validates authenticator clone counters and issues tokens."
+          }
+        },
+        {
+          "name": "2.5 Login - OTP (Step 1: Request OTP)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response && response.data && response.data.challengeToken) {",
+                  "    pm.collectionVariables.set('challengeToken', response.data.challengeToken);",
+                  "    console.log('Captured challengeToken:', response.data.challengeToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{testPhone}}\",\n  \"loginMethod\": \"OTP\",\n  \"userType\": \"CUSTOMER\",\n  \"deviceId\": \"{{deviceId}}\",\n  \"deviceName\": \"{{deviceName}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Step 1 of passwordless OTP login. Initiates an SMS/Email OTP challenge and returns requiresOtp: true with a challenge token."
+          }
+        },
+        {
+          "name": "2.6 Login - OTP (Step 2: Verify Login OTP)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response && response.data) {",
+                  "    if (response.data.accessToken) {",
+                  "        pm.collectionVariables.set('accessToken', response.data.accessToken);",
+                  "    }",
+                  "    if (response.data.refreshToken) {",
+                  "        pm.collectionVariables.set('refreshToken', response.data.refreshToken);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{testPhone}}\",\n  \"otpCode\": \"123456\",\n  \"purpose\": \"LOGIN_2FA\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/otp/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "otp/verify"
+              ]
+            },
+            "description": "Step 2 of OTP login. Verifies the code with purpose LOGIN_2FA, creates an authorized session, and returns access and refresh tokens."
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Transaction PIN Management",
+      "description": "Endpoints for creating and verifying the 4-digit numeric transaction PIN (Factor 3) used for high-value funds transfers.",
+      "item": [
+        {
+          "name": "3.1 Set Transaction PIN",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pin\": \"{{testPin}}\",\n  \"confirmPin\": \"{{testPin}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/pin/set",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "pin",
+                "set"
+              ]
+            },
+            "description": "Sets or updates the customer's 4-digit transaction PIN. Enforces PIN history tracking and complexity rules."
+          }
+        },
+        {
+          "name": "3.2 Verify Transaction PIN",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pin\": \"{{testPin}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/pin/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "pin",
+                "verify"
+              ]
+            },
+            "description": "Verifies the customer's 4-digit transaction PIN. Enforces independent 3-attempt lockout protection."
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Biometric Passkey Management (FIDO2)",
+      "description": "Full lifecycle endpoints for FIDO2 WebAuthn biometric passkeys tied to Apple Secure Enclave and Android Keystore.",
+      "item": [
+        {
+          "name": "4.1 Generate Passkey Registration Challenge",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response && response.data && response.data.challengeNonce) {",
+                  "    pm.collectionVariables.set('passkeyChallenge', response.data.challengeNonce);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/passkey/register-challenge",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "passkey",
+                "register-challenge"
+              ]
+            },
+            "description": "Issues cryptographic registration challenge nonce to initialize FIDO2 public key generation on device hardware."
+          }
+        },
+        {
+          "name": "4.2 Register Biometric Passkey Hardware Key",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response && response.data && response.data.credentialId) {",
+                  "    pm.collectionVariables.set('credentialId', response.data.credentialId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"credentialId\": \"{{credentialId}}\",\n  \"publicKey\": \"mock_public_key_hardware_enclave_key_sample\",\n  \"attestationObject\": \"mock_attestation_bytes\",\n  \"clientDataJson\": \"mock_client_data_json\",\n  \"deviceId\": \"{{deviceId}}\",\n  \"deviceName\": \"{{deviceName}}\",\n  \"transports\": \"internal\",\n  \"aaguid\": \"00000000-0000-0000-0000-000000000000\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/passkey/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "passkey",
+                "register"
+              ]
+            },
+            "description": "Stores the public key and credential ID generated by the device's biometric Secure Enclave / Keystore."
+          }
+        },
+        {
+          "name": "4.3 List Registered Passkey Devices",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/passkey/devices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "passkey",
+                "devices"
+              ]
+            },
+            "description": "Returns all hardware devices registered for biometric authentication by the authenticated customer."
+          }
+        },
+        {
+          "name": "4.4 Revoke Biometric Passkey Device",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/passkey/{{credentialId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "passkey",
+                "{{credentialId}}"
+              ]
+            },
+            "description": "Revokes a registered hardware passkey, preventing future biometric authentication from that device."
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Session & Token Management",
+      "description": "Token rotation, profile retrieval, and session revocation.",
+      "item": [
+        {
+          "name": "5.1 Get Current User Profile (/me)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Fetches current customer profile, primary account balance, KYC tier, and registered devices."
+          }
+        },
+        {
+          "name": "5.2 Rotate Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response && response.data) {",
+                  "    if (response.data.accessToken) {",
+                  "        pm.collectionVariables.set('accessToken', response.data.accessToken);",
+                  "    }",
+                  "    if (response.data.refreshToken) {",
+                  "        pm.collectionVariables.set('refreshToken', response.data.refreshToken);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/refresh-token",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "refresh-token"
+              ]
+            },
+            "description": "Exchanges a valid refresh token for a newly issued access token and rotated refresh token."
+          }
+        },
+        {
+          "name": "5.3 Logout Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-Refresh-Token",
+                "value": "{{refreshToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Revokes the active refresh token session and clears security context."
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Back-Office Compliance (KYC Review)",
+      "description": "Operations for compliance officers to review and approve/reject Tier 3 identity verification submissions.",
+      "item": [
+        {
+          "name": "6.1 Review KYC Document (Approve to Tier 3)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"APPROVE\",\n  \"rejectionReason\": null\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/compliance/kyc/{{verificationId}}/review",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "compliance",
+                "kyc",
+                "{{verificationId}}",
+                "review"
+              ]
+            },
+            "description": "Approves the pending KYC document verification, elevates the customer profile to TIER_3, and raises daily transfer limits to NGN 10,000,000."
+          }
+        },
+        {
+          "name": "6.2 Review KYC Document (Reject)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"REJECT\",\n  \"rejectionReason\": \"Identity document image is unreadable or blurry\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/compliance/kyc/{{verificationId}}/review",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "compliance",
+                "kyc",
+                "{{verificationId}}",
+                "review"
+              ]
+            },
+            "description": "Rejects the pending KYC document submission with an audit reason and retains the existing tier."
+          }
+        }
+      ]
+    }
+  ]
+}

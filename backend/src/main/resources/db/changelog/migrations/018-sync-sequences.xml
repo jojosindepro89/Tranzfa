@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="018-sync-sequences" author="techlateef" dbms="postgresql">
+        <comment>Synchronize auto-increment sequences with manually seeded records</comment>
+        <sql splitStatements="true" endDelimiter=";">
+            SELECT setval(pg_get_serial_sequence('identities', 'id'), COALESCE((SELECT MAX(id) FROM identities), 1));
+            SELECT setval(pg_get_serial_sequence('customers', 'id'), COALESCE((SELECT MAX(id) FROM customers), 1));
+            SELECT setval(pg_get_serial_sequence('accounts', 'id'), COALESCE((SELECT MAX(id) FROM accounts), 1));
+            SELECT setval(pg_get_serial_sequence('roles', 'id'), COALESCE((SELECT MAX(id) FROM roles), 1));
+            SELECT setval(pg_get_serial_sequence('permissions', 'id'), COALESCE((SELECT MAX(id) FROM permissions), 1));
+            SELECT setval(pg_get_serial_sequence('external_account_mappings', 'id'), COALESCE((SELECT MAX(id) FROM external_account_mappings), 1));
+            SELECT setval(pg_get_serial_sequence('password_credentials', 'id'), COALESCE((SELECT MAX(id) FROM password_credentials), 1));
+            SELECT setval(pg_get_serial_sequence('pin_credentials', 'id'), COALESCE((SELECT MAX(id) FROM pin_credentials), 1));
+            SELECT setval(pg_get_serial_sequence('fx_rates', 'id'), COALESCE((SELECT MAX(id) FROM fx_rates), 1));
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

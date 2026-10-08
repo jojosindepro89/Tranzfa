@@ -55,10 +55,10 @@ public class SecurityConfig {
                         // Public endpoints (Auth Factor 1 & Factor 2, Onboarding, Webhooks, API Docs)
                         .requestMatchers(
                                 "/api/v1/auth/initiate-phone",
-                                "/api/v1/auth/verify-phone-otp",
+                                "/api/v1/auth/otp/verify",
                                 "/api/v1/auth/personal-details",
                                 "/api/v1/auth/login",
-                                "/api/v1/auth/verify-otp",
+                                "/api/v1/auth/passkey/login-challenge",
                                 "/api/v1/auth/resend-otp",
                                 "/api/v1/auth/refresh-token",
                                 "/api/v1/webhooks/**",
@@ -72,7 +72,13 @@ public class SecurityConfig {
                         // All banking, PIN setting/verification, and transactional endpoints require authenticated JWT
                         .anyRequest().authenticated())
                 .formLogin(AbstractHttpConfigurer::disable)
-                .httpBasic(Customizer.withDefaults());
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setContentType("application/json");
+                            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED);
+                            response.getWriter().write("{\"status\":\"error\",\"message\":\"Full authentication is required to access this resource.\"}");
+                        }));
 
         return http.build();
     }

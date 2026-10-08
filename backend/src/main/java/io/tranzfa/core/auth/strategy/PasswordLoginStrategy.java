@@ -77,6 +77,11 @@ public class PasswordLoginStrategy implements LoginStrategy {
         credential.setLastLoginOn(Instant.now());
         passwordCredentialRepository.save(credential);
 
+        // New Device Step-Up Verification: Check if device is unrecognized
+        if (authHelper.isNewDevice(identity, request.getDeviceId())) {
+            return authHelper.triggerNewDeviceVerification(identity, request.getDeviceId(), request.getDeviceName());
+        }
+
         return authHelper.issueTokensAndCreateSession(
                 identity,
                 request.getDeviceId(),

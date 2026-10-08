@@ -28,7 +28,7 @@ class JwtTokenProviderTest {
                 432000000L,
                 86400000L
         );
-        AppProperties appProperties = new AppProperties(null, null, null, null, jwtProps, null, null);
+        AppProperties appProperties = new AppProperties(null, null, null, null, jwtProps, null, null, null);
         jwtTokenProvider = new JwtTokenProvider(appProperties);
 
         sampleIdentity = Identity.builder()

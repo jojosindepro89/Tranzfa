@@ -8,9 +8,10 @@ import io.tranzfa.core.auth.dto.AuthTokenResponse;
 import io.tranzfa.core.auth.dto.InitiatePhoneRequest;
 import io.tranzfa.core.auth.dto.InitiatePhoneResponse;
 import io.tranzfa.core.auth.dto.PersonalDetailsRequest;
+import io.tranzfa.core.auth.dto.UploadDocumentRequest;
 import io.tranzfa.core.auth.dto.UserProfileResponse;
-import io.tranzfa.core.auth.dto.VerifyPhoneOtpRequest;
-import io.tranzfa.core.auth.dto.VerifyPhoneOtpResponse;
+import io.tranzfa.core.auth.dto.VerifyOtpRequest;
+import io.tranzfa.core.auth.dto.VerifyOtpResponse;
 import io.tranzfa.core.auth.model.entity.Customer;
 import io.tranzfa.core.auth.model.entity.Identity;
 import io.tranzfa.core.auth.model.entity.PasswordCredential;
@@ -25,6 +26,7 @@ import io.tranzfa.core.auth.strategy.LoginStrategyFactory;
 import io.tranzfa.core.banking.provider.exception.IdentityVerificationFailedException;
 import io.tranzfa.core.common.exception.ConflictException;
 import io.tranzfa.core.config.AppProperties;
+import io.tranzfa.core.kyc.model.entity.KycVerification;
 import io.tranzfa.core.kyc.repository.KycVerificationRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -78,7 +80,7 @@ class AuthServiceTest {
         AppProperties.Otp otpProps = new AppProperties.Otp(10, true);
         AppProperties.SafeHaven shProps = new AppProperties.SafeHaven(
                 "https://api.sandbox.safehavenmfb.com", "cid", "assert", "sec", "acct", "wh", true, "090286", "Safe Haven Microfinance Bank");
-        AppProperties appProperties = new AppProperties(shProps, null, null, otpProps, null, null, null);
+        AppProperties appProperties = new AppProperties(shProps, null, null, otpProps, null, null, null, null);
 
         authService = new io.tranzfa.core.auth.service.impl.AuthServiceImpl(
                 identityRepository,
@@ -125,23 +127,6 @@ class AuthServiceTest {
         assertThatThrownBy(() -> authService.initiatePhone(request))
                 .isInstanceOf(ConflictException.class)
                 .hasMessageContaining("already registered");
-    }
-
-    @Test
-    @DisplayName("Should verify phone OTP and return signed verification token")
-    void shouldVerifyPhoneOtp() {
-        VerifyPhoneOtpRequest request = VerifyPhoneOtpRequest.builder()
-                .phone("+2348012345678")
-                .otpCode("123456")
-                .build();
-
-        when(otpService.verifyOtp("+2348012345678", "123456", OtpPurpose.REGISTRATION)).thenReturn(true);
-        when(jwtTokenProvider.generateVerificationToken("+2348012345678")).thenReturn("mock-token-xyz");
-
-        VerifyPhoneOtpResponse response = authService.verifyPhoneOtp(request);
-
-        assertThat(response.isPhoneVerified()).isTrue();
-        assertThat(response.getVerificationToken()).isEqualTo("mock-token-xyz");
     }
 
     @Test
@@ -265,5 +250,99 @@ class AuthServiceTest {
 
         // Verify tokens are never issued
         verify(authHelper, never()).issueTokensAndCreateSession(any(), any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("Should verify OTP via unified endpoint for REGISTRATION purpose")
+    void shouldVerifyOtpUnifiedForRegistration() {
+        VerifyOtpRequest request = VerifyOtpRequest.builder()
+                .identifier("+2348012345678")
+                .otpCode("654321")
+                .purpose(OtpPurpose.REGISTRATION)
+                .build();
+
+        when(otpService.verifyOtp("+2348012345678", "654321", OtpPurpose.REGISTRATION)).thenReturn(true);
+        when(jwtTokenProvider.generateVerificationToken("+2348012345678")).thenReturn("mock-reg-token");
+
+        VerifyOtpResponse response = authService.verifyOtp(request);
+
+        assertThat(response.isVerified()).isTrue();
+        assertThat(response.getPurpose()).isEqualTo(OtpPurpose.REGISTRATION);
+        assertThat(response.getVerificationToken()).isEqualTo("mock-reg-token");
+    }
+
+    @Test
+    @DisplayName("Should verify OTP via unified endpoint for LOGIN_2FA and return session tokens")
+    void shouldVerifyOtpUnifiedForLogin2FA() {
+        VerifyOtpRequest request = VerifyOtpRequest.builder()
+                .identifier("+2348012345678")
+                .otpCode("987654")
+                .purpose(OtpPurpose.LOGIN_2FA)
+                .deviceId("dev-iphone-15")
+                .deviceName("iPhone 15 Pro")
+                .build();
+
+        Identity sampleIdentity = Identity.builder()
+                .publicId("id_cust_123")
+                .identityType(IdentityType.CUSTOMER)
+                .build();
+
+        AuthTokenResponse mockTokens = AuthTokenResponse.builder()
+                .accessToken("mock-access-token")
+                .refreshToken("mock-refresh-token")
+                .build();
+
+        when(otpService.verifyOtp("+2348012345678", "987654", OtpPurpose.LOGIN_2FA)).thenReturn(true);
+        when(authHelper.resolveIdentity("+2348012345678", IdentityType.CUSTOMER)).thenReturn(sampleIdentity);
+        when(authHelper.issueTokensAndCreateSession(sampleIdentity, "dev-iphone-15", "iPhone 15 Pro", null, null))
+                .thenReturn(mockTokens);
+
+        VerifyOtpResponse response = authService.verifyOtp(request);
+
+        assertThat(response.isVerified()).isTrue();
+        assertThat(response.getPurpose()).isEqualTo(OtpPurpose.LOGIN_2FA);
+        assertThat(response.getAuthTokens()).isNotNull();
+        assertThat(response.getAuthTokens().getAccessToken()).isEqualTo("mock-access-token");
+    }
+
+    @Test
+    @DisplayName("Should record uploaded document as PENDING_REVIEW without elevating tier prematurely")
+    void shouldUploadDocumentAndSetPendingReviewWithoutPrematureTierElevation() {
+        Identity identity = Identity.builder().publicId("id_cust_10").identityType(IdentityType.CUSTOMER).build();
+        identity.setId(10L);
+
+        Customer customer = Customer.builder()
+                .identity(identity)
+                .firstName("Sarah")
+                .lastName("Okonjo")
+                .kycTier(KycTier.TIER_2)
+                .build();
+        customer.setId(10L);
+
+        UploadDocumentRequest request = UploadDocumentRequest.builder()
+                .documentType("PASSPORT")
+                .documentUrl("https://storage.tranzfa.io/kyc/passport_10.jpg")
+                .build();
+
+        when(customerRepository.findByIdentityId(10L)).thenReturn(java.util.Optional.of(customer));
+        when(authHelper.buildUserProfile(identity)).thenReturn(UserProfileResponse.builder()
+                .customerId(10L)
+                .kycTier(KycTier.TIER_2)
+                .build());
+
+        UserProfileResponse response = authService.uploadDocument(identity, request);
+
+        // Verify tier remains TIER_2 (NOT TIER_3)
+        assertThat(response.getKycTier()).isEqualTo(KycTier.TIER_2);
+
+        // Verify KycVerification was saved with status PENDING_REVIEW
+        org.mockito.ArgumentCaptor<KycVerification> captor = org.mockito.ArgumentCaptor.forClass(KycVerification.class);
+        verify(kycVerificationRepository).save(captor.capture());
+        KycVerification savedKyc = captor.getValue();
+        assertThat(savedKyc.getStatus()).isEqualTo("PENDING_REVIEW");
+        assertThat(savedKyc.getDocumentType()).isEqualTo("PASSPORT");
+
+        // Verify accountService.updateDailyLimits was NEVER called prematurely
+        verify(accountService, never()).updateDailyLimits(any(), any());
     }
 }

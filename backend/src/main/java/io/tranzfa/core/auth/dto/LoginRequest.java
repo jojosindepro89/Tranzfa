@@ -22,8 +22,23 @@ public class LoginRequest {
     @Schema(description = "Password (required if loginMethod is PASSWORD)", example = "Password123!")
     private String password;
 
-    @Schema(description = "Passkey WebAuthn signed assertion JSON (required if loginMethod is PASSKEY)")
+    @Schema(description = "4-digit numeric transaction/login PIN (required if loginMethod is PIN)", example = "4321")
+    private String pin;
+
+    @Schema(description = "Passkey WebAuthn signed assertion JSON (optional raw JSON)")
     private String passkeyData;
+
+    @Schema(description = "Passkey Credential ID registered on this device (required if loginMethod is PASSKEY)", example = "cred_ios_f81729")
+    private String credentialId;
+
+    @Schema(description = "Cryptographic challenge nonce that was signed by FaceID / Secure Enclave")
+    private String challenge;
+
+    @Schema(description = "Cryptographic signature produced by FaceID private key")
+    private String signature;
+
+    @Schema(description = "Hardware authenticator sign counter to prevent cloned authenticators", example = "42")
+    private Long signCount;
 
     @Builder.Default
     @Schema(description = "Login authentication method", example = "PASSWORD")

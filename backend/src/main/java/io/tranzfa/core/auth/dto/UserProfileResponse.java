@@ -75,4 +75,13 @@ public class UserProfileResponse {
 
     @Schema(description = "Whether the user has set their 4-digit transaction PIN", example = "false")
     private boolean isPinSet;
+
+    @Schema(description = "Currently active/bound device UUID", example = "dev-ios-a918f-2831")
+    private String currentDeviceId;
+
+    @Schema(description = "Whether the CBN 24-hour device switch limit cooldown is currently active", example = "false")
+    private boolean isDeviceCooldownActive;
+
+    @Schema(description = "Effective daily transaction limit in major currency units (Naira), accounting for CBN device cooldown", example = "20000.00")
+    private BigDecimal effectiveDailyLimit;
 }

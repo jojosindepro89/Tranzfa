@@ -10,11 +10,14 @@ import io.tranzfa.core.auth.model.entity.Identity;
 import io.tranzfa.core.auth.model.entity.Session;
 import io.tranzfa.core.auth.model.entity.StaffUser;
 import io.tranzfa.core.auth.model.enums.IdentityType;
+import io.tranzfa.core.auth.model.enums.OtpChannel;
+import io.tranzfa.core.auth.model.enums.OtpPurpose;
 import io.tranzfa.core.auth.repository.CustomerRepository;
 import io.tranzfa.core.auth.repository.IdentityRepository;
 import io.tranzfa.core.auth.repository.SessionRepository;
 import io.tranzfa.core.auth.repository.StaffUserRepository;
 import io.tranzfa.core.common.exception.ResourceNotFoundException;
+import io.tranzfa.core.config.AppProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -22,6 +25,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
@@ -40,6 +44,8 @@ public class AuthHelper {
     private final SessionRepository sessionRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final PinService pinService;
+    private final OtpService otpService;
+    private final AppProperties appProperties;
 
     @Transactional(readOnly = true)
     public Identity resolveIdentity(String identifier, IdentityType userType) {
@@ -70,8 +76,8 @@ public class AuthHelper {
                     .findFirst()
                     .orElse(null);
 
-            String bankCode = "090286";
-            String bankName = "Safe Haven Microfinance Bank";
+            String bankCode = null;
+            String bankName = null;
             if (primaryAccount != null) {
                 var mappingOpt = externalAccountMappingRepository.findByAccountIdAndIsPrimaryTrue(primaryAccount.getId());
                 if (mappingOpt.isPresent()) {
@@ -84,6 +90,20 @@ public class AuthHelper {
             io.tranzfa.core.common.model.Money availableMoney = primaryAccount != null
                     ? primaryAccount.getAvailableMoney()
                     : io.tranzfa.core.common.model.Money.zeroNgn();
+
+            boolean isCooldownActive = false;
+            BigDecimal effectiveLimit = customer.getKycTier().getDefaultDailyLimitMoney().toMajorUnits();
+
+            if (appProperties.banking() != null && customer.getLastDeviceSwitchAt() != null) {
+                int cooldownHours = appProperties.banking().deviceSwitchCooldownHours();
+                double cooldownLimitNgn = appProperties.banking().deviceSwitchCooldownLimitNgn();
+                long hoursSinceSwitch = Duration.between(customer.getLastDeviceSwitchAt(), Instant.now()).toHours();
+                if (hoursSinceSwitch < cooldownHours) {
+                    isCooldownActive = true;
+                    BigDecimal cbnCap = BigDecimal.valueOf(cooldownLimitNgn);
+                    effectiveLimit = effectiveLimit.min(cbnCap);
+                }
+            }
 
             return UserProfileResponse.builder()
                     .identityId(identity.getId())
@@ -106,6 +126,9 @@ public class AuthHelper {
                     .primaryAccountBalanceFormatted(availableMoney.formatDisplay())
                     .primaryCurrency(availableMoney.currency())
                     .isPinSet(isPinSet)
+                    .currentDeviceId(customer.getCurrentDeviceId())
+                    .isDeviceCooldownActive(isCooldownActive)
+                    .effectiveDailyLimit(effectiveLimit)
                     .build();
         } else {
             StaffUser staff = staffUserRepository.findByIdentityId(identity.getId())
@@ -132,6 +155,33 @@ public class AuthHelper {
             String deviceName,
             String ipAddress,
             String userAgent) {
+
+        // 1. CBN Single Active Device Rule: Revoke all existing active sessions for this identity
+        List<Session> activeSessions = sessionRepository.findAllByIdentityIdAndRevokedAtIsNull(identity.getId());
+        if (!activeSessions.isEmpty()) {
+            Instant now = Instant.now();
+            activeSessions.forEach(s -> s.setRevokedAt(now));
+            sessionRepository.saveAll(activeSessions);
+            log.info("Revoked {} previous active session(s) for identity ID: {} (CBN Single Active Device Rule)",
+                    activeSessions.size(), identity.getId());
+        }
+
+        // 2. Customer device binding & device switch detection
+        if (identity.getIdentityType() == IdentityType.CUSTOMER && deviceId != null && !deviceId.isBlank()) {
+            customerRepository.findByIdentityId(identity.getId()).ifPresent(c -> {
+                if (c.getCurrentDeviceId() != null && !deviceId.equals(c.getCurrentDeviceId())) {
+                    c.setLastDeviceSwitchAt(Instant.now());
+                    if (appProperties.banking() != null) {
+                        int hours = appProperties.banking().deviceSwitchCooldownHours();
+                        double limit = appProperties.banking().deviceSwitchCooldownLimitNgn();
+                        log.warn("Device switch detected for customer ID: {} (Old: {}, New: {}). CBN {}h limit cooldown of ₦{} activated.",
+                                c.getId(), c.getCurrentDeviceId(), deviceId, hours, limit);
+                    }
+                }
+                c.setCurrentDeviceId(deviceId);
+                customerRepository.save(c);
+            });
+        }
 
         UserProfileResponse profile = buildUserProfile(identity);
         String username = profile.getEmail() != null ? profile.getEmail() : profile.getPhone();
@@ -170,5 +220,45 @@ public class AuthHelper {
                 .requiresOtp(false)
                 .user(profile)
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isNewDevice(Identity identity, String deviceId) {
+        if (identity.getIdentityType() != IdentityType.CUSTOMER || deviceId == null || deviceId.isBlank()) {
+            return false;
+        }
+        return customerRepository.findByIdentityId(identity.getId())
+                .map(c -> c.getCurrentDeviceId() != null && !deviceId.equals(c.getCurrentDeviceId()))
+                .orElse(false);
+    }
+
+    @Transactional
+    public AuthTokenResponse triggerNewDeviceVerification(Identity identity, String deviceId, String deviceName) {
+        Customer customer = customerRepository.findByIdentityId(identity.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Customer profile not found for identity ID: " + identity.getId()));
+        String phone = customer.getPhone();
+        otpService.generateAndSendOtp(phone, OtpPurpose.LOGIN_2FA, OtpChannel.SMS, identity);
+        String challengeToken = jwtTokenProvider.generateVerificationToken(phone);
+        String masked = maskRecipient(phone);
+
+        log.warn("New device authorization challenge triggered for customer ID: {} on device: {}", customer.getId(), deviceId);
+
+        return AuthTokenResponse.builder()
+                .requiresOtp(true)
+                .requiresDeviceVerification(true)
+                .otpRecipientMasked(masked)
+                .challengeToken(challengeToken)
+                .tokenType("Bearer")
+                .message("New device detected (" + (deviceName != null ? deviceName : deviceId) +
+                        "). A 6-digit verification code has been sent to your registered phone number to authorize this device.")
+                .build();
+    }
+
+    private String maskRecipient(String recipient) {
+        if (recipient == null || recipient.length() < 6) {
+            return "***";
+        }
+        int len = recipient.length();
+        return recipient.substring(0, 4) + "******" + recipient.substring(len - 2);
     }
 }

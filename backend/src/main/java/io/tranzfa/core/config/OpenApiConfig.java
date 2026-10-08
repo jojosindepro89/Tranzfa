@@ -16,7 +16,8 @@ import java.util.List;
 @Configuration
 public class OpenApiConfig {
 
-    private static final String SECURITY_SCHEME_NAME = "BearerAuthentication";
+    private static final String BEARER_AUTH = "BearerAuth";
+    private static final String BEARER_AUTHENTICATION = "BearerAuthentication";
 
     @Bean
     public OpenAPI customOpenAPI() {
@@ -38,13 +39,19 @@ public class OpenApiConfig {
                 .servers(List.of(
                         new Server().url("http://localhost:8080").description("Local Development Server"),
                         new Server().url("https://api.tranzfa.io").description("Production Gateway")))
-                .addSecurityItem(new SecurityRequirement().addList(SECURITY_SCHEME_NAME))
+                .addSecurityItem(new SecurityRequirement().addList(BEARER_AUTH))
                 .components(new Components()
-                        .addSecuritySchemes(SECURITY_SCHEME_NAME, new SecurityScheme()
-                                .name(SECURITY_SCHEME_NAME)
+                        .addSecuritySchemes(BEARER_AUTH, new SecurityScheme()
+                                .name(BEARER_AUTH)
                                 .type(SecurityScheme.Type.HTTP)
                                 .scheme("bearer")
                                 .bearerFormat("JWT")
-                                .description("Provide the JWT Bearer token issued upon completing Factor 2 OTP verification.")));
+                                .description("Provide the JWT Bearer access token issued upon completing login or registration."))
+                        .addSecuritySchemes(BEARER_AUTHENTICATION, new SecurityScheme()
+                                .name(BEARER_AUTHENTICATION)
+                                .type(SecurityScheme.Type.HTTP)
+                                .scheme("bearer")
+                                .bearerFormat("JWT")
+                                .description("Provide the JWT Bearer access token issued upon completing login or registration.")));
     }
 }

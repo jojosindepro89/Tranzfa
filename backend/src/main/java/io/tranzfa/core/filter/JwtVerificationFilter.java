@@ -91,11 +91,11 @@ public class JwtVerificationFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
         return path.startsWith("/api/v1/auth/login")
+                || path.startsWith("/api/v1/auth/passkey/login-challenge")
                 || path.startsWith("/api/v1/auth/initiate-phone")
-                || path.startsWith("/api/v1/auth/verify-phone-otp")
+                || path.startsWith("/api/v1/auth/otp/verify")
                 || path.startsWith("/api/v1/auth/personal-details")
                 || path.startsWith("/api/v1/auth/refresh-token")
-                || path.startsWith("/api/v1/auth/verify-otp")
                 || path.startsWith("/api/v1/auth/resend-otp")
                 || path.startsWith("/api/v1/webhooks/")
                 || path.startsWith("/v3/api-docs")

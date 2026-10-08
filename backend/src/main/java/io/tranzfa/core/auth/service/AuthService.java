@@ -8,24 +8,21 @@ import io.tranzfa.core.auth.dto.PersonalDetailsRequest;
 import io.tranzfa.core.auth.dto.RefreshTokenRequest;
 import io.tranzfa.core.auth.dto.UploadDocumentRequest;
 import io.tranzfa.core.auth.dto.UserProfileResponse;
-import io.tranzfa.core.auth.dto.VerifyLoginOtpRequest;
-import io.tranzfa.core.auth.dto.VerifyPhoneOtpRequest;
-import io.tranzfa.core.auth.dto.VerifyPhoneOtpResponse;
+import io.tranzfa.core.auth.dto.VerifyOtpRequest;
+import io.tranzfa.core.auth.dto.VerifyOtpResponse;
 import io.tranzfa.core.auth.model.entity.Identity;
 
 public interface AuthService {
 
     InitiatePhoneResponse initiatePhone(InitiatePhoneRequest request);
 
-    VerifyPhoneOtpResponse verifyPhoneOtp(VerifyPhoneOtpRequest request);
+    VerifyOtpResponse verifyOtp(VerifyOtpRequest request);
 
     AuthTokenResponse registerPersonalDetails(PersonalDetailsRequest request);
 
     UserProfileResponse uploadDocument(Identity identity, UploadDocumentRequest request);
 
     AuthTokenResponse login(LoginRequest request);
-
-    AuthTokenResponse verifyLoginOtp(VerifyLoginOtpRequest request);
 
     AuthTokenResponse refreshToken(RefreshTokenRequest request);
 

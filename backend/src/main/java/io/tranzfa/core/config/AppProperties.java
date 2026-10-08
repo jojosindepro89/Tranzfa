@@ -2,6 +2,8 @@ package io.tranzfa.core.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.util.Set;
+
 @ConfigurationProperties(prefix = "app")
 public record AppProperties(
         SafeHaven safeHaven,
@@ -10,7 +12,8 @@ public record AppProperties(
         Otp otp,
         Jwt jwt,
         Banking banking,
-        Async async) {
+        Async async,
+        Passkey passkey) {
 
     public record SafeHaven(
             String baseUrl,
@@ -55,7 +58,9 @@ public record AppProperties(
             double tier1DailyLimitNgn,
             double tier2DailyLimitNgn,
             double tier3DailyLimitNgn,
-            double interbankTransferFeeNgn) {
+            double interbankTransferFeeNgn,
+            double deviceSwitchCooldownLimitNgn,
+            int deviceSwitchCooldownHours) {
     }
 
     public record Async(
@@ -63,5 +68,13 @@ public record AppProperties(
             int maxPoolSize,
             int queueCapacity,
             String threadNamePrefix) {
+    }
+
+    public record Passkey(
+            String rpId,
+            String rpName,
+            Set<String> origins,
+            boolean mockMode,
+            long timeoutSeconds) {
     }
 }

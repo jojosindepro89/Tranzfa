@@ -22,11 +22,13 @@ import java.util.List;
 @Component
 public class JwtTokenProvider {
 
+    private final AppProperties appProperties;
     private final SecretKey key;
     private final long accessTokenExpirationMs;
     private final long refreshTokenExpirationMs;
 
     public JwtTokenProvider(AppProperties appProperties) {
+        this.appProperties = appProperties;
         String secret = appProperties.jwt() != null && appProperties.jwt().secret() != null
                 ? appProperties.jwt().secret()
                 : SecurityConstants.JWT_SECRET_DEFAULT_VALUE;
@@ -97,15 +99,31 @@ public class JwtTokenProvider {
     }
 
     public void validateVerificationToken(String token, String expectedPhone) {
+        if (token == null || token.isBlank()) {
+            throw new UnauthorizedException("Phone verification token is missing.");
+        }
+
+        String cleanToken = token.trim();
+        if (cleanToken.startsWith("Bearer ")) {
+            cleanToken = cleanToken.substring(7).trim();
+        }
+
         try {
-            Claims claims = getClaims(token);
+            Claims claims = getClaims(cleanToken);
             if (!"PHONE_VERIFIED".equals(claims.get("purpose", String.class))) {
                 throw new UnauthorizedException("Invalid token purpose.");
             }
-            if (!expectedPhone.equals(claims.getSubject())) {
+
+            String tokenPhone = claims.getSubject() != null ? claims.getSubject().trim().replaceAll("[\\s\\-\\(\\)]", "") : "";
+            String targetPhone = expectedPhone != null ? expectedPhone.trim().replaceAll("[\\s\\-\\(\\)]", "") : "";
+
+            if (!targetPhone.equalsIgnoreCase(tokenPhone)) {
+                log.warn("Phone verification token mismatch: expected [{}], token contained [{}]", targetPhone, tokenPhone);
                 throw new UnauthorizedException("Token phone number does not match registration phone number.");
             }
         } catch (JwtException | IllegalArgumentException e) {
+            log.warn("Phone verification token validation failed for phone [{}]: {} ({})",
+                    expectedPhone, e.getMessage(), e.getClass().getSimpleName());
             throw new UnauthorizedException("Phone verification token has expired or is invalid. Please verify phone again.");
         }
     }

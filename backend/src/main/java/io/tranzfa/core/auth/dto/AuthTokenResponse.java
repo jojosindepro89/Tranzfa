@@ -28,6 +28,12 @@ public class AuthTokenResponse {
     @Schema(description = "Indicates if 2FA verification is required before full authentication", example = "false")
     private boolean requiresOtp;
 
+    @Schema(description = "Indicates if a new device was detected and requires authorization", example = "false")
+    private boolean requiresDeviceVerification;
+
+    @Schema(description = "User-facing message (e.g., instructions on device verification)", example = "New device detected. Enter OTP to authorize.")
+    private String message;
+
     @Schema(description = "Masked recipient if OTP is required", example = "+23480******78")
     private String otpRecipientMasked;
 

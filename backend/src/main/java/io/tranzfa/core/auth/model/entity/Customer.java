@@ -17,6 +17,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 
+import java.time.Instant;
+
 @Entity
 @Table(name = "customers")
 @Getter
@@ -52,6 +54,12 @@ public class Customer extends BaseEntity {
     @Column(name = "kyc_tier", nullable = false, length = 32)
     @Builder.Default
     private KycTier kycTier = KycTier.TIER_1;
+
+    @Column(name = "current_device_id", length = 128)
+    private String currentDeviceId;
+
+    @Column(name = "last_device_switch_at")
+    private Instant lastDeviceSwitchAt;
 
     /**
      * Dynamically formats full name from first, middle, and last name without duplicate DB columns.

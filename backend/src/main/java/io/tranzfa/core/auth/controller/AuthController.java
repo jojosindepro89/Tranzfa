@@ -7,17 +7,20 @@ import io.tranzfa.core.auth.dto.AuthTokenResponse;
 import io.tranzfa.core.auth.dto.InitiatePhoneRequest;
 import io.tranzfa.core.auth.dto.InitiatePhoneResponse;
 import io.tranzfa.core.auth.dto.LoginRequest;
+import io.tranzfa.core.auth.dto.PasskeyChallengeResponse;
+import io.tranzfa.core.auth.dto.PasskeyDeviceResponse;
+import io.tranzfa.core.auth.dto.PasskeyRegisterRequest;
 import io.tranzfa.core.auth.dto.PersonalDetailsRequest;
 import io.tranzfa.core.auth.dto.RefreshTokenRequest;
 import io.tranzfa.core.auth.dto.SetPinRequest;
 import io.tranzfa.core.auth.dto.UploadDocumentRequest;
 import io.tranzfa.core.auth.dto.UserProfileResponse;
-import io.tranzfa.core.auth.dto.VerifyLoginOtpRequest;
-import io.tranzfa.core.auth.dto.VerifyPhoneOtpRequest;
-import io.tranzfa.core.auth.dto.VerifyPhoneOtpResponse;
+import io.tranzfa.core.auth.dto.VerifyOtpRequest;
+import io.tranzfa.core.auth.dto.VerifyOtpResponse;
 import io.tranzfa.core.auth.dto.VerifyPinRequest;
 import io.tranzfa.core.auth.model.entity.Identity;
 import io.tranzfa.core.auth.service.AuthService;
+import io.tranzfa.core.auth.service.PasskeyService;
 import io.tranzfa.core.auth.service.PinService;
 import io.tranzfa.core.common.dto.ApiResponse;
 import io.tranzfa.core.common.util.SecurityUtil;
@@ -26,12 +29,17 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -42,6 +50,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final PinService pinService;
+    private final PasskeyService passkeyService;
     private final SecurityUtil securityUtil;
 
     @PostMapping("/initiate-phone")
@@ -51,11 +60,12 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("Verification code sent successfully", response));
     }
 
-    @PostMapping("/verify-phone-otp")
-    @Operation(summary = "Step 2: Verify phone OTP", description = "Validates 6-digit OTP code and returns an authorized registration token")
-    public ResponseEntity<ApiResponse<VerifyPhoneOtpResponse>> verifyPhoneOtp(@Valid @RequestBody VerifyPhoneOtpRequest request) {
-        VerifyPhoneOtpResponse response = authService.verifyPhoneOtp(request);
-        return ResponseEntity.ok(ApiResponse.success("Phone verified successfully", response));
+    @PostMapping("/otp/verify")
+    @Operation(summary = "Step 2: Unified OTP Verification",
+            description = "Single unified endpoint for verifying OTPs across all channels and purposes (REGISTRATION, LOGIN_2FA, PASSWORD_RESET, PIN_RESET, TRANSFER_AUTHORIZATION)")
+    public ResponseEntity<ApiResponse<VerifyOtpResponse>> verifyOtp(@Valid @RequestBody VerifyOtpRequest request) {
+        VerifyOtpResponse response = authService.verifyOtp(request);
+        return ResponseEntity.ok(ApiResponse.success(response.getMessage(), response));
     }
 
     @PostMapping("/personal-details")
@@ -76,18 +86,11 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    @Operation(summary = "Unified Login (Password, Passkey, OTP)",
-            description = "Authenticates customer or staff by identifier (phone, email, @tag, or employee ID)")
+    @Operation(summary = "Unified Login (Password, PIN, Passkey, OTP)",
+            description = "Authenticates customer or staff by identifier with 4-digit PIN, Password, Biometric Passkey, or OTP. Enforces CBN single-device and 24-hour limit cooldown.")
     public ResponseEntity<ApiResponse<AuthTokenResponse>> login(@Valid @RequestBody LoginRequest request) {
         AuthTokenResponse response = authService.login(request);
         return ResponseEntity.ok(ApiResponse.success("Authentication evaluated", response));
-    }
-
-    @PostMapping("/verify-otp")
-    @Operation(summary = "Verify 2FA login challenge OTP", description = "Completes 2-Factor Authentication login")
-    public ResponseEntity<ApiResponse<AuthTokenResponse>> verifyLoginOtp(@Valid @RequestBody VerifyLoginOtpRequest request) {
-        AuthTokenResponse response = authService.verifyLoginOtp(request);
-        return ResponseEntity.ok(ApiResponse.success("2FA verified successfully", response));
     }
 
     @PostMapping("/pin/set")
@@ -133,5 +136,53 @@ public class AuthController {
         Identity identity = securityUtil.getAuthenticatedIdentity();
         authService.logout(identity, refreshToken);
         return ResponseEntity.ok(ApiResponse.success("Logged out successfully"));
+    }
+
+    @PostMapping("/passkey/register-challenge")
+    @SecurityRequirement(name = "BearerAuth")
+    @Operation(summary = "Generate FIDO2 biometric registration challenge",
+            description = "Issues cryptographic random nonce for Apple Secure Enclave / Android Keystore passkey creation")
+    public ResponseEntity<ApiResponse<PasskeyChallengeResponse>> generatePasskeyRegisterChallenge() {
+        Identity identity = securityUtil.getAuthenticatedIdentity();
+        PasskeyChallengeResponse response = passkeyService.generateRegisterChallenge(identity);
+        return ResponseEntity.ok(ApiResponse.success("Passkey registration challenge issued", response));
+    }
+
+    @PostMapping("/passkey/register")
+    @SecurityRequirement(name = "BearerAuth")
+    @Operation(summary = "Register biometric passkey hardware public key",
+            description = "Stores device public key from Apple Secure Enclave or Android Keystore")
+    public ResponseEntity<ApiResponse<PasskeyDeviceResponse>> registerPasskey(@Valid @RequestBody PasskeyRegisterRequest request) {
+        Identity identity = securityUtil.getAuthenticatedIdentity();
+        PasskeyDeviceResponse response = passkeyService.registerPasskey(identity, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Biometric passkey registered successfully", response));
+    }
+
+    @PostMapping("/passkey/login-challenge")
+    @Operation(summary = "Generate FIDO2 biometric login challenge",
+            description = "Returns cryptographic nonce to be signed by device FaceID / TouchID hardware key")
+    public ResponseEntity<ApiResponse<PasskeyChallengeResponse>> generatePasskeyLoginChallenge(@RequestParam String identifier) {
+        PasskeyChallengeResponse response = passkeyService.generateLoginChallenge(identifier);
+        return ResponseEntity.ok(ApiResponse.success("Passkey login challenge issued", response));
+    }
+
+    @GetMapping("/passkey/devices")
+    @SecurityRequirement(name = "BearerAuth")
+    @Operation(summary = "List registered biometric passkey devices",
+            description = "Retrieves all hardware devices registered for biometric login by this customer")
+    public ResponseEntity<ApiResponse<List<PasskeyDeviceResponse>>> listPasskeyDevices() {
+        Identity identity = securityUtil.getAuthenticatedIdentity();
+        List<PasskeyDeviceResponse> devices = passkeyService.listDevices(identity);
+        return ResponseEntity.ok(ApiResponse.success("Passkey devices retrieved", devices));
+    }
+
+    @DeleteMapping("/passkey/{credentialId}")
+    @SecurityRequirement(name = "BearerAuth")
+    @Operation(summary = "Revoke biometric passkey device",
+            description = "Revokes a registered biometric passkey device to disable FaceID login from it")
+    public ResponseEntity<ApiResponse<String>> revokePasskey(@PathVariable String credentialId) {
+        Identity identity = securityUtil.getAuthenticatedIdentity();
+        passkeyService.revokePasskey(identity, credentialId);
+        return ResponseEntity.ok(ApiResponse.success("Biometric passkey revoked successfully"));
     }
 }

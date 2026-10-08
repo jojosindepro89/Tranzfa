@@ -30,7 +30,6 @@ public class SafeHavenBankingProvider implements CoreBankingProvider {
 
     private final AppProperties appProperties;
     private final RestClient safeHavenRestClient;
-    private final MockBankingProvider mockBankingProvider;
     private final ObjectMapper objectMapper;
 
     @Override
@@ -40,23 +39,6 @@ public class SafeHavenBankingProvider implements CoreBankingProvider {
 
     @Override
     public CreateAccountResponse createAccount(CreateAccountRequest request) {
-        boolean isMock = appProperties.safeHaven() == null || appProperties.safeHaven().mockMode();
-
-        if (isMock) {
-            log.info("[SAFEHAVEN-PROVIDER] Mock mode active. Delegating to simulated SafeHaven provider.");
-            CreateAccountResponse mockResult = mockBankingProvider.createAccount(request);
-            return CreateAccountResponse.builder()
-                    .accountNumber(mockResult.accountNumber())
-                    .bankCode(getBankCode())
-                    .bankName(getBankName())
-                    .externalAccountId(mockResult.externalAccountId())
-                    .externalCustomerId(mockResult.externalCustomerId())
-                    .identityId(mockResult.identityId())
-                    .tierLevel(mockResult.tierLevel())
-                    .metadataJson(mockResult.metadataJson())
-                    .build();
-        }
-
         log.info("[SAFEHAVEN-PROVIDER] Initiating live SafeHaven API calls for: {} ({})",
                 request.getFullName(), request.email());
 

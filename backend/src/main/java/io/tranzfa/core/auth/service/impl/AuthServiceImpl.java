@@ -10,9 +10,8 @@ import io.tranzfa.core.auth.dto.PersonalDetailsRequest;
 import io.tranzfa.core.auth.dto.RefreshTokenRequest;
 import io.tranzfa.core.auth.dto.UploadDocumentRequest;
 import io.tranzfa.core.auth.dto.UserProfileResponse;
-import io.tranzfa.core.auth.dto.VerifyLoginOtpRequest;
-import io.tranzfa.core.auth.dto.VerifyPhoneOtpRequest;
-import io.tranzfa.core.auth.dto.VerifyPhoneOtpResponse;
+import io.tranzfa.core.auth.dto.VerifyOtpRequest;
+import io.tranzfa.core.auth.dto.VerifyOtpResponse;
 import io.tranzfa.core.auth.model.entity.Customer;
 import io.tranzfa.core.auth.model.entity.Identity;
 import io.tranzfa.core.auth.model.entity.PasswordCredential;
@@ -33,6 +32,7 @@ import io.tranzfa.core.auth.strategy.LoginStrategyFactory;
 import io.tranzfa.core.common.exception.ConflictException;
 import io.tranzfa.core.common.exception.ResourceNotFoundException;
 import io.tranzfa.core.common.exception.UnauthorizedException;
+import io.tranzfa.core.common.exception.ValidationException;
 import io.tranzfa.core.common.util.CodeGenerationUtil;
 import io.tranzfa.core.config.AppProperties;
 import io.tranzfa.core.kyc.model.entity.KycVerification;
@@ -90,18 +90,60 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public VerifyPhoneOtpResponse verifyPhoneOtp(VerifyPhoneOtpRequest request) {
-        String phone = request.getPhone().trim();
-        otpService.verifyOtp(phone, request.getOtpCode().trim(), OtpPurpose.REGISTRATION);
+    public VerifyOtpResponse verifyOtp(VerifyOtpRequest request) {
+        String identifier = request.getIdentifier().trim();
+        String code = request.getOtpCode().trim();
+        OtpPurpose purpose = request.getPurpose();
 
-        String token = jwtTokenProvider.generateVerificationToken(phone);
+        // 1. Verify against OtpToken table
+        otpService.verifyOtp(identifier, code, purpose);
 
-        return VerifyPhoneOtpResponse.builder()
-                .phone(phone)
-                .phoneVerified(true)
-                .verificationToken(token)
-                .message("Phone number verified successfully. Please continue to submit personal details.")
-                .build();
+        // 2. Dispatch action based on purpose
+        switch (purpose) {
+            case REGISTRATION: {
+                String token = jwtTokenProvider.generateVerificationToken(identifier);
+                return VerifyOtpResponse.builder()
+                        .verified(true)
+                        .purpose(purpose)
+                        .verificationToken(token)
+                        .message("Phone number verified successfully. Please continue to submit personal details.")
+                        .build();
+            }
+            case LOGIN_2FA: {
+                Identity identity = authHelper.resolveIdentity(identifier, IdentityType.CUSTOMER);
+                AuthTokenResponse authTokens = authHelper.issueTokensAndCreateSession(
+                        identity,
+                        request.getDeviceId(),
+                        request.getDeviceName(),
+                        null,
+                        null);
+                return VerifyOtpResponse.builder()
+                        .verified(true)
+                        .purpose(purpose)
+                        .authTokens(authTokens)
+                        .message("Login authentication successful.")
+                        .build();
+            }
+            case PASSWORD_RESET:
+            case PIN_RESET: {
+                String token = jwtTokenProvider.generateVerificationToken(identifier);
+                return VerifyOtpResponse.builder()
+                        .verified(true)
+                        .purpose(purpose)
+                        .verificationToken(token)
+                        .message("OTP verified successfully. Proceed to reset credentials.")
+                        .build();
+            }
+            case TRANSFER_AUTHORIZATION: {
+                return VerifyOtpResponse.builder()
+                        .verified(true)
+                        .purpose(purpose)
+                        .message("Transaction authorization OTP verified successfully.")
+                        .build();
+            }
+            default:
+                throw new ValidationException("Unsupported OTP purpose: " + purpose);
+        }
     }
 
     @Override
@@ -176,18 +218,12 @@ public class AuthServiceImpl implements AuthService {
                 .tierLevel(3)
                 .documentType(request.getDocumentType())
                 .documentUrl(request.getDocumentUrl())
-                .status("APPROVED")
+                .status("PENDING_REVIEW")
                 .externalVerificationId("v_doc_" + CodeGenerationUtil.generateNumericString(8))
                 .build();
         kycVerificationRepository.save(kyc);
 
-        customer.setKycTier(KycTier.TIER_3);
-        customerRepository.save(customer);
-
-        // Dynamically upgrade account daily limit to Tier 3 limit
-        accountService.updateDailyLimits(customer.getId(), KycTier.TIER_3);
-
-        log.info("Customer ID {} upgraded to KYC Tier 3 via document upload. Daily limits elevated.", customer.getId());
+        log.info("Customer ID {} submitted KYC Tier 3 document for verification. Status: PENDING_REVIEW.", customer.getId());
         return authHelper.buildUserProfile(identity);
     }
 
@@ -196,21 +232,6 @@ public class AuthServiceImpl implements AuthService {
     public AuthTokenResponse login(LoginRequest request) {
         var strategy = loginStrategyFactory.getStrategy(request.getLoginMethod());
         return strategy.authenticate(request);
-    }
-
-    @Override
-    @Transactional
-    public AuthTokenResponse verifyLoginOtp(VerifyLoginOtpRequest request) {
-        String identifier = request.getIdentifier().trim();
-        otpService.verifyOtp(identifier, request.getOtpCode().trim(), OtpPurpose.LOGIN_2FA);
-
-        Identity identity = authHelper.resolveIdentity(identifier, IdentityType.CUSTOMER);
-        return authHelper.issueTokensAndCreateSession(
-                identity,
-                request.getDeviceId(),
-                request.getDeviceName(),
-                null,
-                null);
     }
 
     @Override
